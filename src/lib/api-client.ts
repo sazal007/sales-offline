@@ -116,7 +116,28 @@ apiClient.interceptors.request.use(async (config) => {
 
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
+    if (typeof config.headers.set === "function") {
+      config.headers.set("Authorization", `Bearer ${token}`);
+    }
   }
+
+  const authHeader =
+    config.headers?.Authorization ||
+    (typeof config.headers?.get === "function"
+      ? config.headers.get("Authorization")
+      : undefined);
+
+  console.log(
+    `[API REQUEST] 🚀 ${config.method?.toUpperCase()} ${config.baseURL || ""}${config.url}`,
+    {
+      hasToken: Boolean(token),
+      authHeader: authHeader
+        ? `${String(authHeader).slice(0, 25)}...`
+        : "MISSING",
+      params: config.params,
+      data: config.data,
+    },
+  );
 
   return config;
 });
@@ -126,13 +147,30 @@ apiClient.interceptors.request.use(async (config) => {
 // -----------------------------------------------------------------------------
 
 apiClient.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    console.log(
+      `[API RESPONSE] ✅ ${response.status} ${response.config.method?.toUpperCase()} ${response.config.url}`,
+      response.data,
+    );
+    return response;
+  },
 
   (error) => {
     const customMessage = getApiErrorMessage(error);
 
     if (axios.isAxiosError(error)) {
+      console.log(
+        `[API ERROR] ❌ ${error.response?.status ?? "NETWORK_ERROR"} ${error.config?.method?.toUpperCase()} ${error.config?.url}`,
+        {
+          status: error.response?.status,
+          responseData: error.response?.data,
+          headersSent: error.config?.headers,
+          message: customMessage,
+        },
+      );
       error.message = customMessage;
+    } else {
+      console.log("[API ERROR] ❌ Non-Axios Error:", error);
     }
 
     return Promise.reject(error);
