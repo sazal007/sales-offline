@@ -4,7 +4,7 @@
 import { Redirect, Tabs } from "expo-router";
 import { ActivityIndicator, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Home, User, Users } from "lucide-react-native";
+import { Home, ShoppingBag, User, Users } from "lucide-react-native";
 import { useAuth } from "@/context/AuthContext";
 
 export default function TabLayout() {
@@ -50,6 +50,15 @@ export default function TabLayout() {
           title: "Home",
           tabBarIcon: ({ color, size }) => (
             <Home size={size} color={color} strokeWidth={2} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="orders"
+        options={{
+          title: "Orders",
+          tabBarIcon: ({ color, size }) => (
+            <ShoppingBag size={size} color={color} strokeWidth={2} />
           ),
         }}
       />
