@@ -15,12 +15,15 @@ import type {
 export const CUSTOMERS_QUERY_KEY = ["customers"] as const;
 
 /**
- * Fetch all customers.
+ * Fetch all customers, optionally filtered by server-side search query (?search=).
  */
-export function useCustomersQuery() {
+export function useCustomersQuery(search?: string) {
+  const trimmed = search?.trim();
   return useQuery({
-    queryKey: CUSTOMERS_QUERY_KEY,
-    queryFn: getCustomers,
+    queryKey: trimmed
+      ? [...CUSTOMERS_QUERY_KEY, { search: trimmed }]
+      : CUSTOMERS_QUERY_KEY,
+    queryFn: () => getCustomers(trimmed),
   });
 }
 

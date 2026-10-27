@@ -18,13 +18,16 @@ async function getAuthHeader() {
 
 /**
  * Fetch all offline customers.
+ * Optionally filters by search query via ?search= query parameter.
  * Handles both plain array and DRF paginated response formats.
  */
-export async function getCustomers(): Promise<OfflineCustomer[]> {
+export async function getCustomers(search?: string): Promise<OfflineCustomer[]> {
   const headers = await getAuthHeader();
+  const trimmed = search?.trim();
+  const params = trimmed ? { search: trimmed } : undefined;
   const response = await apiClient.get<
     OfflineCustomer[] | PaginatedCustomersResponse
-  >(CUSTOMERS_ENDPOINT, { headers });
+  >(CUSTOMERS_ENDPOINT, { headers, params });
 
   if (Array.isArray(response.data)) {
     return response.data;

@@ -12,6 +12,7 @@ import {
   TextInput,
   ActivityIndicator,
   Alert,
+  Switch,
 } from "react-native";
 import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
@@ -43,6 +44,8 @@ import type {
   Product,
 } from "@/types/offlineSales";
 import { useCreateOfflineOrderMutation } from "@/hooks/useOfflineOrderQueries";
+import { useCustomersQuery } from "@/hooks/useCustomerQueries";
+import { useDebounce } from "@/hooks/useDebounce";
 import { PAYMENT_METHODS, type SelectedOrderItem } from "./orderHelpers";
 
 interface CreateOrderModalProps {
@@ -62,6 +65,20 @@ export function CreateOrderModal({
 }: CreateOrderModalProps) {
   const createMutation = useCreateOfflineOrderMutation();
 
+  const [customerSearch, setCustomerSearch] = useState("");
+  const debouncedCustomerSearch = useDebounce(customerSearch, 300);
+
+  const {
+    data: fetchedCustomers = [],
+    isLoading: isSearchingCustomers,
+  } = useCustomersQuery(debouncedCustomerSearch);
+
+  const displayedCustomers = debouncedCustomerSearch.trim()
+    ? fetchedCustomers
+    : fetchedCustomers.length > 0
+      ? fetchedCustomers
+      : customers;
+
   const [selectedCustomerId, setSelectedCustomerId] = useState<number | null>(
     null,
   );
@@ -75,6 +92,7 @@ export function CreateOrderModal({
   ]);
   const [totalAmount, setTotalAmount] = useState<string>("");
   const [paidAmount, setPaidAmount] = useState<string>("0");
+  const [isPrePaid, setIsPrePaid] = useState<boolean>(false);
   const [paymentMethod, setPaymentMethod] =
     useState<OfflinePaymentMethod>("cash");
   const [remarks, setRemarks] = useState<string>("");
@@ -120,12 +138,14 @@ export function CreateOrderModal({
         setTotalAmount("");
       }
       setPaidAmount("0");
+      setIsPrePaid(false);
       setPaymentMethod("cash");
       setRemarks("");
       setPaymentScreenshot(null);
       setFormErrors({});
       setApiError(null);
       setCustomerPickerOpen(false);
+      setCustomerSearch("");
       setOpenProductDropdownIndex(null);
       setProductSearch("");
     }
@@ -216,12 +236,55 @@ export function CreateOrderModal({
       }, 0);
       if (newTotal > 0 && (!totalAmount || totalAmount === "0")) {
         setTotalAmount(String(newTotal));
+        if (isPrePaid) {
+          setPaidAmount(String(newTotal));
+        }
       }
 
       return updated;
     });
     setOpenProductDropdownIndex(null);
     setProductSearch("");
+  };
+
+  const handleTotalAmountChange = (val: string) => {
+    setTotalAmount(val);
+    if (isPrePaid) {
+      setPaidAmount(val);
+    }
+    if (formErrors.total_amount) {
+      setFormErrors((prev) => ({
+        ...prev,
+        total_amount: "",
+      }));
+    }
+  };
+
+  const handleTogglePrePaid = (val: boolean) => {
+    setIsPrePaid(val);
+    if (val) {
+      setPaidAmount(totalAmount || "");
+    } else {
+      setPaidAmount("0");
+      setPaymentScreenshot(null);
+      setPaymentMethod("cash");
+    }
+    setFormErrors((prev) => {
+      const n = { ...prev };
+      delete n.paid_amount;
+      delete n.payment_screenshot;
+      return n;
+    });
+  };
+
+  const handlePaidAmountChange = (val: string) => {
+    setPaidAmount(val);
+    if (formErrors.paid_amount) {
+      setFormErrors((prev) => ({
+        ...prev,
+        paid_amount: "",
+      }));
+    }
   };
 
   const handlePickImage = async () => {
@@ -301,17 +364,6 @@ export function CreateOrderModal({
       errors.total_amount = "Valid total amount is required";
     }
 
-    const tot = parseFloat(totalAmount) || 0;
-    const paid = parseFloat(paidAmount) || 0;
-
-    if (paid < 0) {
-      errors.paid_amount = "Paid amount cannot be negative";
-    }
-
-    if (paid > tot) {
-      errors.paid_amount = "Paid amount cannot exceed total amount";
-    }
-
     if (items.length === 0) {
       errors.items = "At least one order item is required";
     } else {
@@ -323,11 +375,22 @@ export function CreateOrderModal({
       }
     }
 
-    if (paymentMethod !== "cash" && paid > 0 && !paymentScreenshot) {
-      errors.payment_screenshot = `A screenshot is required for ${
-        PAYMENT_METHODS.find((p) => p.key === paymentMethod)?.label ||
-        paymentMethod
-      } payments`;
+    if (isPrePaid) {
+      const tot = parseFloat(totalAmount) || 0;
+      const paid = parseFloat(paidAmount) || 0;
+
+      if (paid < 0) {
+        errors.paid_amount = "Paid amount cannot be negative";
+      } else if (paid > tot) {
+        errors.paid_amount = "Paid amount cannot exceed total amount";
+      }
+
+      if (paymentMethod !== "cash" && !paymentScreenshot) {
+        const methodName =
+          PAYMENT_METHODS.find((p) => p.key === paymentMethod)?.label ||
+          paymentMethod;
+        errors.payment_screenshot = `Payment screenshot is compulsory for ${methodName} payments`;
+      }
     }
 
     setFormErrors(errors);
@@ -342,14 +405,14 @@ export function CreateOrderModal({
       customer: Number(selectedCustomerId),
       order_date: orderDate,
       total_amount: totalAmount.trim(),
-      paid_amount: paidAmount.trim() || "0.00",
-      payment_method: paymentMethod,
+      paid_amount: isPrePaid ? (paidAmount.trim() || "0.00") : "0.00",
+      payment_method: isPrePaid ? paymentMethod : "cash",
       remarks: remarks.trim() || undefined,
       items: items.map((it) => ({
         inventory_id: Number(it.inventory_id),
         quantity: Number(it.quantity),
       })),
-      ...(paymentScreenshot ? { payment_screenshot: paymentScreenshot } : {}),
+      ...(isPrePaid && paymentScreenshot ? { payment_screenshot: paymentScreenshot } : {}),
     };
 
     try {
@@ -363,9 +426,10 @@ export function CreateOrderModal({
     }
   };
 
-  const selectedCustomerObj = customers.find(
-    (c) => Number(c.id) === selectedCustomerId,
-  );
+  // Look in displayed customers first, then fall back to passed-in customers
+  const selectedCustomerObj =
+    displayedCustomers.find((c) => Number(c.id) === selectedCustomerId) ??
+    customers.find((c) => Number(c.id) === selectedCustomerId);
 
   return (
     <Modal
@@ -449,19 +513,56 @@ export function CreateOrderModal({
               </Pressable>
 
               {customerPickerOpen && (
-                <View className="mt-1.5 max-h-52 overflow-hidden rounded-xl border border-border bg-surface shadow-md">
-                  <ScrollView nestedScrollEnabled className="p-1">
-                    {customers.length === 0 ? (
+                <View className="mt-1.5 rounded-xl border border-border bg-surface shadow-md overflow-hidden">
+                  {/* Search input */}
+                  <View className="flex-row items-center gap-2 border-b border-border px-3 py-2">
+                    <Search size={14} color="#79726b" />
+                    <TextInput
+                      value={customerSearch}
+                      onChangeText={setCustomerSearch}
+                      placeholder="Search by name, phone..."
+                      placeholderTextColor="#79726b"
+                      autoFocus
+                      returnKeyType="search"
+                      className="flex-1 text-xs text-ink py-0"
+                    />
+                    {customerSearch.length > 0 && (
+                      <Pressable
+                        onPress={() => setCustomerSearch("")}
+                        hitSlop={8}
+                      >
+                        <X size={13} color="#79726b" />
+                      </Pressable>
+                    )}
+                  </View>
+
+                  {/* Results */}
+                  <ScrollView
+                    nestedScrollEnabled
+                    className="p-1"
+                    style={{ maxHeight: 200 }}
+                  >
+                    {isSearchingCustomers ? (
+                      <View className="py-4 items-center">
+                        <ActivityIndicator size="small" color="#e8452c" />
+                        <Text className="mt-1.5 text-[11px] text-ink-soft">Searching...</Text>
+                      </View>
+                    ) : displayedCustomers.length === 0 ? (
                       <View className="p-3 items-center">
-                        <Text className="text-xs text-ink-soft">No customers found</Text>
+                        <Text className="text-xs text-ink-soft">
+                          {customerSearch.trim()
+                            ? `No customers matching "${customerSearch.trim()}"`
+                            : "No customers found"}
+                        </Text>
                       </View>
                     ) : (
-                      customers.map((c) => (
+                      displayedCustomers.map((c) => (
                         <Pressable
                           key={c.id}
                           onPress={() => {
                             setSelectedCustomerId(Number(c.id));
                             setCustomerPickerOpen(false);
+                            setCustomerSearch("");
                             if (formErrors.customer) {
                               setFormErrors((prev) => ({
                                 ...prev,
@@ -973,7 +1074,7 @@ export function CreateOrderModal({
               )}
             </View>
 
-            {/* 4. Payment & Amounts */}
+            {/* 4. Payment & Order Details */}
             <View className="mb-4">
               <View className="mb-2 flex-row items-center justify-between">
                 <Text className="text-xs font-semibold uppercase tracking-wider text-ink-soft">
@@ -981,8 +1082,19 @@ export function CreateOrderModal({
                 </Text>
                 {calculatedTotal > 0 && (
                   <Pressable
-                    onPress={() => setTotalAmount(String(calculatedTotal))}
-                    className="flex-row items-center gap-1 rounded bg-brand/10 px-2 py-0.5"
+                    onPress={() => {
+                      setTotalAmount(String(calculatedTotal));
+                      if (isPrePaid) {
+                        setPaidAmount(String(calculatedTotal));
+                      }
+                      if (formErrors.total_amount) {
+                        setFormErrors((prev) => ({
+                          ...prev,
+                          total_amount: "",
+                        }));
+                      }
+                    }}
+                    className="flex-row items-center gap-1 rounded bg-brand/10 px-2 py-0.5 active:opacity-75"
                   >
                     <Text className="text-[10px] font-bold text-brand">
                       Apply Sum: Rs. {calculatedTotal.toLocaleString()}
@@ -998,15 +1110,7 @@ export function CreateOrderModal({
                 </Text>
                 <TextInput
                   value={totalAmount}
-                  onChangeText={(val) => {
-                    setTotalAmount(val);
-                    if (formErrors.total_amount) {
-                      setFormErrors((prev) => ({
-                        ...prev,
-                        total_amount: "",
-                      }));
-                    }
-                  }}
+                  onChangeText={handleTotalAmountChange}
                   placeholder="e.g. 15000.00"
                   placeholderTextColor="#79726b"
                   keyboardType="numeric"
@@ -1023,214 +1127,279 @@ export function CreateOrderModal({
                 )}
               </View>
 
-              {/* Paid Amount Input */}
+              {/* Remarks / Credit Terms (Placed below Total Amount) */}
               <View className="mb-3">
-                <View className="flex-row items-center justify-between mb-1">
-                  <Text className="text-xs font-medium text-ink">
-                    Paid Amount (Rs.)
-                  </Text>
-                  {Boolean(totalAmount) && (
-                    <Pressable
-                      onPress={() => setPaidAmount(totalAmount)}
-                      className="rounded bg-emerald-50 px-2 py-0.5"
-                    >
-                      <Text className="text-[10px] font-bold text-emerald-700">
-                        Mark Fully Paid
-                      </Text>
-                    </Pressable>
-                  )}
-                </View>
-                <TextInput
-                  value={paidAmount}
-                  onChangeText={(val) => {
-                    setPaidAmount(val);
-                    if (formErrors.paid_amount) {
-                      setFormErrors((prev) => ({
-                        ...prev,
-                        paid_amount: "",
-                      }));
-                    }
-                  }}
-                  placeholder="0.00"
-                  placeholderTextColor="#79726b"
-                  keyboardType="numeric"
-                  className={`h-11 rounded-xl border bg-surface px-3 text-sm font-bold text-ink ${
-                    formErrors.paid_amount
-                      ? "border-red-500"
-                      : "border-border"
-                  }`}
-                />
-                {Boolean(formErrors.paid_amount) && (
-                  <Text className="mt-1 text-xs text-red-500">
-                    {formErrors.paid_amount}
-                  </Text>
-                )}
-              </View>
-
-              {/* Remaining balance preview */}
-              <View className="mb-4 rounded-xl bg-surface p-3 flex-row items-center justify-between border border-border">
-                <Text className="text-xs text-ink-soft">
-                  Remaining Balance (Credit):
-                </Text>
-                <Text className="text-sm font-bold text-amber-600">
-                  Rs. {calculatedRemaining.toLocaleString()}
-                </Text>
-              </View>
-
-              {/* Payment Method Selector */}
-              <View className="mb-2">
                 <Text className="mb-1 text-xs font-medium text-ink">
-                  Payment Method
+                  Remarks / Credit Terms
                 </Text>
-                <View className="flex-row flex-wrap gap-2">
-                  {PAYMENT_METHODS.map((pm) => {
-                    const isSelected = paymentMethod === pm.key;
-                    return (
-                      <Pressable
-                        key={pm.key}
-                        onPress={() => setPaymentMethod(pm.key)}
-                        className={`rounded-xl border px-3 py-2 ${
-                          isSelected
-                            ? "border-brand bg-brand/10"
-                            : "border-border bg-surface"
-                        }`}
-                      >
-                        <Text
-                          className={`text-xs font-semibold ${
-                            isSelected ? "text-brand" : "text-ink-soft"
-                          }`}
-                        >
-                          {pm.label}
-                        </Text>
-                      </Pressable>
-                    );
-                  })}
-                </View>
+                <TextInput
+                  value={remarks}
+                  onChangeText={setRemarks}
+                  placeholder="e.g. Delivered to shop, credit due in 30 days"
+                  placeholderTextColor="#79726b"
+                  multiline
+                  numberOfLines={2}
+                  className="min-h-[60px] rounded-xl border border-border bg-surface p-3 text-xs text-ink"
+                />
               </View>
 
-              {/* Payment Receipt / Screenshot Section */}
-              {paymentMethod !== "cash" && (
-                <View className="mt-3 rounded-2xl border border-dashed border-border bg-surface/60 p-3.5">
-                  <View className="flex-row items-center justify-between mb-2">
-                    <View className="flex-row items-center gap-1.5">
-                      <DollarSign size={14} color="#e8452c" />
-                      <Text className="text-xs font-bold text-ink">
-                        Payment Screenshot / Receipt
+            </View>
+
+            {/* 5. Pre-paid Toggle & Prepayment Section (At the last) */}
+            <View className="mb-6 rounded-2xl border border-border bg-surface/50 p-4">
+              {/* Pre-paid Toggle Row */}
+              <View className="flex-row items-center justify-between">
+                <View className="flex-1 pr-3">
+                  <View className="flex-row items-center gap-1.5">
+                    <Text className="text-sm font-bold text-ink">
+                      Pre-paid
+                    </Text>
+                    {isPrePaid && (
+                      <View className="rounded bg-emerald-50 px-1.5 py-0.2 border border-emerald-200">
+                        <Text className="text-[9px] font-bold text-emerald-700">
+                          Active
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+                  <Text className="text-xs text-ink-soft mt-0.5">
+                    {isPrePaid
+                      ? "Prepayment / advance payment collected"
+                      : "No advance payment (Full order on credit)"}
+                  </Text>
+                </View>
+                <Switch
+                  value={isPrePaid}
+                  onValueChange={handleTogglePrePaid}
+                  trackColor={{ false: "#e4dfda", true: "#e8452c" }}
+                  thumbColor="#ffffff"
+                  ios_backgroundColor="#e4dfda"
+                />
+              </View>
+
+              {/* View Prepayment Section only when toggle is ON */}
+              {isPrePaid ? (
+                <View className="mt-4 pt-4 border-t border-border/60">
+                  {/* Paid Amount Input */}
+                  <View className="mb-3">
+                    <View className="flex-row items-center justify-between mb-1">
+                      <Text className="text-xs font-medium text-ink">
+                        Paid Amount (Rs.) *
                       </Text>
+                      {Boolean(
+                        totalAmount &&
+                          parseFloat(paidAmount) !== parseFloat(totalAmount),
+                      ) && (
+                        <Pressable
+                          onPress={() => setPaidAmount(totalAmount)}
+                          className="rounded bg-emerald-50 px-2 py-0.5"
+                        >
+                          <Text className="text-[10px] font-bold text-emerald-700">
+                            Full Amount
+                          </Text>
+                        </Pressable>
+                      )}
                     </View>
-                    <View
-                      className={`rounded px-1.5 py-0.5 ${
-                        parseFloat(paidAmount) > 0 ? "bg-brand/10" : "bg-border/40"
+                    <TextInput
+                      value={paidAmount}
+                      onChangeText={handlePaidAmountChange}
+                      placeholder="0.00"
+                      placeholderTextColor="#79726b"
+                      keyboardType="numeric"
+                      className={`h-11 rounded-xl border bg-background px-3 text-sm font-bold text-ink ${
+                        formErrors.paid_amount
+                          ? "border-red-500"
+                          : "border-border"
                       }`}
-                    >
-                      <Text
-                        className={`text-[10px] font-bold ${
-                          parseFloat(paidAmount) > 0
-                            ? "text-brand"
-                            : "text-ink-soft"
-                        }`}
-                      >
-                        {parseFloat(paidAmount) > 0 ? "Required" : "Optional"}
+                    />
+                    {Boolean(formErrors.paid_amount) && (
+                      <Text className="mt-1 text-xs text-red-500">
+                        {formErrors.paid_amount}
                       </Text>
-                    </View>
+                    )}
                   </View>
 
-                  {paymentScreenshot ? (
-                    <View className="rounded-xl border border-border bg-background p-2.5">
-                      <View className="relative">
-                        <Image
-                          source={{ uri: paymentScreenshot.uri }}
-                          className="h-36 w-full rounded-lg"
-                          contentFit="contain"
-                        />
-                        <View className="mt-2 flex-row items-center justify-between">
-                          <Text
-                            numberOfLines={1}
-                            className="text-xs font-semibold text-ink flex-1 mr-2"
-                          >
-                            {paymentScreenshot.name}
-                          </Text>
-                          <View className="flex-row items-center gap-1.5">
-                            <Pressable
-                              onPress={handlePickImage}
-                              className="flex-row items-center gap-1 rounded-lg border border-border bg-background px-2.5 py-1 active:opacity-70"
-                            >
-                              <RefreshCw size={11} color="#79726b" />
-                              <Text className="text-[11px] font-semibold text-ink">
-                                Change
-                              </Text>
-                            </Pressable>
-                            <Pressable
-                              onPress={() => {
-                                setPaymentScreenshot(null);
+                  {/* Remaining Balance Preview */}
+                  <View
+                    className={`mb-3 flex-row items-center justify-between rounded-xl border p-3 ${
+                      calculatedRemaining === 0
+                        ? "border-emerald-200 bg-emerald-50"
+                        : "border-border bg-background"
+                    }`}
+                  >
+                    <View className="flex-row items-center gap-1.5">
+                      <Text className="text-xs font-medium text-ink-soft">
+                        Remaining Balance (Credit):
+                      </Text>
+                      {calculatedRemaining === 0 && (
+                        <CheckCircle2 size={13} color="#15803d" />
+                      )}
+                    </View>
+                    <Text
+                      className={`text-sm font-bold ${
+                        calculatedRemaining === 0
+                          ? "text-emerald-700"
+                          : "text-amber-600"
+                      }`}
+                    >
+                      Rs. {calculatedRemaining.toLocaleString()}
+                    </Text>
+                  </View>
+
+                  {/* Payment Method Selector */}
+                  <View className="mb-3">
+                    <Text className="mb-1 text-xs font-medium text-ink">
+                      Payment Method
+                    </Text>
+                    <View className="flex-row flex-wrap gap-2">
+                      {PAYMENT_METHODS.map((pm) => {
+                        const isSelected = paymentMethod === pm.key;
+                        return (
+                          <Pressable
+                            key={pm.key}
+                            onPress={() => {
+                              setPaymentMethod(pm.key);
+                              if (pm.key === "cash") {
                                 setFormErrors((prev) => {
                                   const n = { ...prev };
                                   delete n.payment_screenshot;
                                   return n;
                                 });
-                              }}
-                              className="flex-row items-center gap-1 rounded-lg border border-red-200 bg-red-50 px-2.5 py-1 active:opacity-70"
+                              }
+                            }}
+                            className={`rounded-xl border px-3 py-2 ${
+                              isSelected
+                                ? "border-brand bg-brand/10"
+                                : "border-border bg-surface"
+                            }`}
+                          >
+                            <Text
+                              className={`text-xs font-semibold ${
+                                isSelected ? "text-brand" : "text-ink-soft"
+                              }`}
                             >
-                              <Trash2 size={11} color="#e8452c" />
-                              <Text className="text-[11px] font-semibold text-brand">
-                                Remove
+                              {pm.label}
+                            </Text>
+                          </Pressable>
+                        );
+                      })}
+                    </View>
+                  </View>
+
+                  {/* Payment Receipt / Screenshot Section (Compulsory for non-cash) */}
+                  {paymentMethod !== "cash" && (
+                    <View
+                      className={`rounded-2xl border ${
+                        formErrors.payment_screenshot
+                          ? "border-red-500 bg-red-50/30"
+                          : "border-dashed border-border bg-background"
+                      } p-3.5`}
+                    >
+                      <View className="flex-row items-center justify-between mb-2">
+                        <View className="flex-row items-center gap-1.5">
+                          <DollarSign size={14} color="#e8452c" />
+                          <Text className="text-xs font-bold text-ink">
+                            Payment Screenshot / Receipt *
+                          </Text>
+                        </View>
+                        <View className="rounded bg-red-100 px-2 py-0.5 border border-red-200">
+                          <Text className="text-[10px] font-bold text-red-700 uppercase">
+                            Compulsory
+                          </Text>
+                        </View>
+                      </View>
+
+                      {paymentScreenshot ? (
+                        <View className="rounded-xl border border-border bg-surface p-2.5">
+                          <View className="relative">
+                            <Image
+                              source={{ uri: paymentScreenshot.uri }}
+                              className="h-36 w-full rounded-lg"
+                              contentFit="contain"
+                            />
+                            <View className="mt-2 flex-row items-center justify-between">
+                              <Text
+                                numberOfLines={1}
+                                className="text-xs font-semibold text-ink flex-1 mr-2"
+                              >
+                                {paymentScreenshot.name}
+                              </Text>
+                              <View className="flex-row items-center gap-1.5">
+                                <Pressable
+                                  onPress={handlePickImage}
+                                  className="flex-row items-center gap-1 rounded-lg border border-border bg-surface px-2.5 py-1 active:opacity-70"
+                                >
+                                  <RefreshCw size={11} color="#79726b" />
+                                  <Text className="text-[11px] font-semibold text-ink">
+                                    Change
+                                  </Text>
+                                </Pressable>
+                                <Pressable
+                                  onPress={() => {
+                                    setPaymentScreenshot(null);
+                                    setFormErrors((prev) => {
+                                      const n = { ...prev };
+                                      delete n.payment_screenshot;
+                                      return n;
+                                    });
+                                  }}
+                                  className="flex-row items-center gap-1 rounded-lg border border-red-200 bg-red-50 px-2.5 py-1 active:opacity-70"
+                                >
+                                  <Trash2 size={11} color="#e8452c" />
+                                  <Text className="text-[11px] font-semibold text-brand">
+                                    Remove
+                                  </Text>
+                                </Pressable>
+                              </View>
+                            </View>
+                          </View>
+                        </View>
+                      ) : (
+                        <View className="items-center py-2">
+                          <Text className="text-xs text-ink-soft text-center mb-2.5">
+                            Please upload receipt or QR confirmation screenshot
+                          </Text>
+                          <View className="flex-row items-center gap-3">
+                            <Pressable
+                              onPress={handlePickImage}
+                              className="flex-row items-center gap-1.5 rounded-xl border border-border bg-surface px-3.5 py-2 shadow-sm active:opacity-75"
+                            >
+                              <ImageIcon size={14} color="#241a12" />
+                              <Text className="text-xs font-semibold text-ink">
+                                Gallery
+                              </Text>
+                            </Pressable>
+                            <Pressable
+                              onPress={handleTakePhoto}
+                              className="flex-row items-center gap-1.5 rounded-xl border border-border bg-surface px-3.5 py-2 shadow-sm active:opacity-75"
+                            >
+                              <Camera size={14} color="#241a12" />
+                              <Text className="text-xs font-semibold text-ink">
+                                Camera
                               </Text>
                             </Pressable>
                           </View>
                         </View>
-                      </View>
-                    </View>
-                  ) : (
-                    <View className="items-center py-2">
-                      <Text className="text-xs text-ink-soft text-center mb-2.5">
-                        Please upload receipt or QR confirmation
-                      </Text>
-                      <View className="flex-row items-center gap-3">
-                        <Pressable
-                          onPress={handlePickImage}
-                          className="flex-row items-center gap-1.5 rounded-xl border border-border bg-background px-3.5 py-2 shadow-sm active:opacity-75"
-                        >
-                          <ImageIcon size={14} color="#241a12" />
-                          <Text className="text-xs font-semibold text-ink">
-                            Gallery
-                          </Text>
-                        </Pressable>
-                        <Pressable
-                          onPress={handleTakePhoto}
-                          className="flex-row items-center gap-1.5 rounded-xl border border-border bg-background px-3.5 py-2 shadow-sm active:opacity-75"
-                        >
-                          <Camera size={14} color="#241a12" />
-                          <Text className="text-xs font-semibold text-ink">
-                            Camera
-                          </Text>
-                        </Pressable>
-                      </View>
-                    </View>
-                  )}
+                      )}
 
-                  {Boolean(formErrors.payment_screenshot) && (
-                    <Text className="mt-2 text-xs font-medium text-red-500">
-                      {formErrors.payment_screenshot}
-                    </Text>
+                      {Boolean(formErrors.payment_screenshot) && (
+                        <Text className="mt-2 text-xs font-medium text-red-500">
+                          {formErrors.payment_screenshot}
+                        </Text>
+                      )}
+                    </View>
                   )}
                 </View>
+              ) : (
+                <View className="mt-2.5 rounded-xl bg-background/80 p-2.5 border border-border/50">
+                  <Text className="text-xs text-ink-soft text-center">
+                    Full order will be on credit:{" "}
+                    <Text className="font-bold text-ink">
+                      Rs. {(parseFloat(totalAmount) || 0).toLocaleString()}
+                    </Text>
+                  </Text>
+                </View>
               )}
-            </View>
-
-            {/* 5. Remarks */}
-            <View className="mb-6">
-              <Text className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-ink-soft">
-                Remarks / Credit Terms
-              </Text>
-              <TextInput
-                value={remarks}
-                onChangeText={setRemarks}
-                placeholder="e.g. Delivered to shop, credit due in 30 days"
-                placeholderTextColor="#79726b"
-                multiline
-                numberOfLines={2}
-                className="min-h-[64px] rounded-xl border border-border bg-surface p-3 text-sm text-ink"
-              />
             </View>
 
             {/* Form Action Buttons */}
