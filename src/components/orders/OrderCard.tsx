@@ -2,7 +2,7 @@
 
 import React from "react";
 import { View, Text, Pressable } from "react-native";
-import { Package, Edit2 } from "lucide-react-native";
+import { Package, Edit2, Store } from "lucide-react-native";
 import type { OfflineOrderDetailResponse } from "@/types/offlineSales";
 import { getOrderStatusBadge } from "./orderHelpers";
 
@@ -20,16 +20,24 @@ export function OrderCard({ order, onPress, onEdit }: OrderCardProps) {
       onPress={() => onPress(order)}
       className="rounded-2xl border border-border bg-surface p-4 shadow-sm active:opacity-90"
     >
-      {/* Header: Code, Edit Button & Status */}
-      <View className="flex-row items-center justify-between">
-        <View className="flex-row items-center gap-2">
-          <View className="h-7 w-7 items-center justify-center rounded-lg bg-brand/10">
-            <Package size={14} color="#e8452c" />
+      {/* Header: Customer Details (Main Highlight) + Status & Edit Button */}
+      <View className="flex-row items-start justify-between">
+        <View className="flex-1 flex-row items-center gap-2.5 pr-2">
+          <View className="h-8 w-8 items-center justify-center rounded-lg bg-brand/10">
+            <Store size={16} color="#e8452c" />
           </View>
-          <Text className="text-sm font-bold text-ink">
-            {order.order_code}
-          </Text>
+          <View className="flex-1">
+            <Text numberOfLines={1} className="text-base font-bold text-ink">
+              {order.customer_name || `Customer #${order.customer}`}
+            </Text>
+            {Boolean(order.customer_phone) && (
+              <Text className="mt-0.5 text-xs text-ink-soft">
+                {order.customer_phone}
+              </Text>
+            )}
+          </View>
         </View>
+
         <View className="flex-row items-center gap-2">
           <Pressable
             onPress={(e) => {
@@ -51,17 +59,56 @@ export function OrderCard({ order, onPress, onEdit }: OrderCardProps) {
         </View>
       </View>
 
-      {/* Customer Row */}
-      <View className="mt-2.5">
-        <Text numberOfLines={1} className="text-sm font-semibold text-ink">
-          {order.customer_name || `Customer #${order.customer}`}
-        </Text>
-        {Boolean(order.customer_phone) && (
-          <Text className="mt-0.5 text-xs text-ink-soft">
-            {order.customer_phone}
+      {/* Order Code & Items Count Row */}
+      <View className="mt-2.5 flex-row items-center justify-between">
+        <View className="flex-row items-center gap-1.5">
+          <View className="h-5 w-5 items-center justify-center rounded-md bg-surface-soft border border-border/70">
+            <Package size={11} color="#79726b" />
+          </View>
+          <Text className="text-xs font-semibold text-ink-soft">
+            {order.order_code}
+          </Text>
+        </View>
+        {Boolean(order.items?.length || order.items_count) && (
+          <Text className="text-[11px] font-medium text-ink-soft">
+            {(order.items?.length || order.items_count)}{" "}
+            {(order.items?.length || order.items_count) === 1
+              ? "item"
+              : "items"}
           </Text>
         )}
       </View>
+
+      {/* Ordered Items Preview */}
+      {order.items && order.items.length > 0 && (
+        <View className="mt-2.5 rounded-xl border border-border/80 bg-background/60 p-2.5 gap-1.5">
+          {order.items.slice(0, 3).map((item, idx) => (
+            <View
+              key={item.id || idx}
+              className="flex-row items-center justify-between"
+            >
+              <View className="flex-1 flex-row items-center gap-1.5 pr-2">
+                <View className="h-1.5 w-1.5 rounded-full bg-brand" />
+                <Text
+                  numberOfLines={1}
+                  className="flex-1 text-xs font-medium text-ink"
+                >
+                  {item.product_name || `Product #${item.product_id}`}
+                </Text>
+              </View>
+              <Text className="text-xs font-bold text-ink-soft">
+                Qty: {item.quantity}
+              </Text>
+            </View>
+          ))}
+          {order.items.length > 3 && (
+            <Text className="pt-0.5 text-[11px] font-medium text-ink-soft">
+              + {order.items.length - 3} more{" "}
+              {order.items.length - 3 === 1 ? "item" : "items"}
+            </Text>
+          )}
+        </View>
+      )}
 
       {/* Divider */}
       <View className="my-3 h-px bg-border/60" />
