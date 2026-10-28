@@ -4,10 +4,7 @@ import React from "react";
 import { View, Text, Pressable } from "react-native";
 import { Package, Edit2 } from "lucide-react-native";
 import type { OfflineOrderDetailResponse } from "@/types/offlineSales";
-import {
-  getOrderStatusBadge,
-  getPaymentStatusBadge,
-} from "./orderHelpers";
+import { getOrderStatusBadge } from "./orderHelpers";
 
 interface OrderCardProps {
   order: OfflineOrderDetailResponse;
@@ -17,7 +14,6 @@ interface OrderCardProps {
 
 export function OrderCard({ order, onPress, onEdit }: OrderCardProps) {
   const orderBadge = getOrderStatusBadge(order.order_status);
-  const payBadge = getPaymentStatusBadge(order.payment_status);
 
   return (
     <Pressable
@@ -56,22 +52,15 @@ export function OrderCard({ order, onPress, onEdit }: OrderCardProps) {
       </View>
 
       {/* Customer Row */}
-      <View className="mt-3 flex-row items-center justify-between">
-        <View className="flex-1 pr-2">
-          <Text numberOfLines={1} className="text-sm font-semibold text-ink">
-            {order.customer_name || `Customer #${order.customer}`}
+      <View className="mt-2.5">
+        <Text numberOfLines={1} className="text-sm font-semibold text-ink">
+          {order.customer_name || `Customer #${order.customer}`}
+        </Text>
+        {Boolean(order.customer_phone) && (
+          <Text className="mt-0.5 text-xs text-ink-soft">
+            {order.customer_phone}
           </Text>
-          {Boolean(order.customer_phone) && (
-            <Text className="text-xs text-ink-soft">
-              {order.customer_phone}
-            </Text>
-          )}
-        </View>
-        <View className={`rounded-md border px-2 py-0.5 ${payBadge.bg}`}>
-          <Text className={`text-[10px] font-bold ${payBadge.text}`}>
-            {order.payment_status}
-          </Text>
-        </View>
+        )}
       </View>
 
       {/* Divider */}

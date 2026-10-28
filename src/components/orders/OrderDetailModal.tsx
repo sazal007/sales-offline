@@ -9,12 +9,14 @@ import {
   View,
   Text,
   ScrollView,
+  ActivityIndicator,
 } from "react-native";
 import { X, Edit2 } from "lucide-react-native";
 import type {
   OfflineOrderDetailResponse,
   UpdateOfflineOrderPayload,
 } from "@/types/offlineSales";
+import { useOfflineOrderDetailQuery } from "@/hooks/useOfflineOrderQueries";
 import { OrderDetailView } from "./OrderDetailView";
 import { OrderEditView } from "./OrderEditView";
 
@@ -43,7 +45,15 @@ export function OrderDetailModal({
   isSaving = false,
   isCancelling = false,
 }: OrderDetailModalProps) {
+  // Query fresh detail when modal is visible
+  const { data: detailData, isLoading: isLoadingDetail } =
+    useOfflineOrderDetailQuery(
+      visible && order?.order_code ? order.order_code : undefined,
+    );
+
   if (!order) return null;
+
+  const activeOrder = detailData || order;
 
   return (
     <Modal
@@ -56,14 +66,17 @@ export function OrderDetailModal({
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         className="flex-1 justify-end bg-black/50"
       >
-        <Pressable className="flex-1" onPress={isEditing ? onCancelEdit : onClose} />
+        <Pressable
+          className="flex-1"
+          onPress={isEditing ? onCancelEdit : onClose}
+        />
         <View className="max-h-[90%] rounded-t-3xl border-t border-border bg-background pb-8 pt-5 shadow-2xl">
           {/* Modal Header */}
           <View className="flex-row items-center justify-between border-b border-border px-6 pb-4">
-            <View className="flex-1 mr-3">
+            <View className="mr-3 flex-1">
               <View className="flex-row items-center gap-2">
                 <Text className="text-lg font-bold text-ink">
-                  {isEditing ? "Edit Order" : order.order_code}
+                  {isEditing ? "Edit Order" : activeOrder.order_code}
                 </Text>
                 {isEditing && (
                   <View className="rounded-md bg-brand/10 px-2 py-0.5">
@@ -75,8 +88,8 @@ export function OrderDetailModal({
               </View>
               <Text className="mt-0.5 text-xs text-ink-soft">
                 {isEditing
-                  ? `${order.order_code} • ${order.customer_name}`
-                  : `Placed on ${order.order_date}`}
+                  ? `${activeOrder.order_code} • ${activeOrder.customer_name}`
+                  : activeOrder.customer_name || `Customer #${activeOrder.customer}`}
               </Text>
             </View>
 
@@ -101,6 +114,7 @@ export function OrderDetailModal({
             </View>
           </View>
 
+          {/* Modal Body */}
           <ScrollView
             className="px-6 pt-4"
             showsVerticalScrollIndicator={false}
@@ -108,14 +122,21 @@ export function OrderDetailModal({
           >
             {isEditing ? (
               <OrderEditView
-                order={order}
+                order={activeOrder}
                 onSave={onSaveEdit}
                 onCancel={onCancelEdit}
                 isSaving={isSaving}
               />
+            ) : isLoadingDetail && (!activeOrder.items || activeOrder.items.length === 0) ? (
+              <View className="items-center justify-center py-12">
+                <ActivityIndicator size="small" color="#e8452c" />
+                <Text className="mt-2 text-xs text-ink-soft">
+                  Loading order details...
+                </Text>
+              </View>
             ) : (
               <OrderDetailView
-                order={order}
+                order={activeOrder}
                 onEdit={onStartEdit}
                 onCancel={onCancelOrder}
                 isCancelling={isCancelling}
