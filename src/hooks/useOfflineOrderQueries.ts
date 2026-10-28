@@ -3,6 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   getOfflineOrders,
+  getCustomerOrders,
   getOfflineOrderDetail,
   createOfflineOrder,
   updateOfflineOrder,
@@ -18,6 +19,7 @@ import type {
 
 export const OFFLINE_ORDERS_KEY = ["offlineOrders"] as const;
 export const FRANCHISE_INVENTORY_KEY = ["franchiseInventory"] as const;
+export const CUSTOMER_ORDERS_KEY = ["customerOrders"] as const;
 
 /**
  * Fetch all offline sales orders.
@@ -37,6 +39,26 @@ export function useOfflineOrderDetailQuery(orderCode?: string) {
     queryKey: [...OFFLINE_ORDERS_KEY, orderCode],
     queryFn: () => getOfflineOrderDetail(orderCode!),
     enabled: Boolean(orderCode),
+  });
+}
+
+/**
+ * Fetch orders for a specific customer.
+ * Endpoint: /api/offline-sales/orders/?customer={customerId}
+ */
+export function useCustomerOrdersQuery(
+  customerId: number | string | undefined | null,
+) {
+  return useQuery({
+    queryKey: [
+      ...CUSTOMER_ORDERS_KEY,
+      customerId ? String(customerId) : null,
+    ],
+    queryFn: () => {
+      if (!customerId) throw new Error("Customer ID is required");
+      return getCustomerOrders(customerId);
+    },
+    enabled: Boolean(customerId),
   });
 }
 

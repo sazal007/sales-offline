@@ -41,6 +41,32 @@ export async function getOfflineOrders(): Promise<OfflineOrderDetailResponse[]> 
 }
 
 /**
+ * Fetch offline orders filtered by customer ID.
+ * Endpoint: /api/offline-sales/orders/?customer={customerId}
+ */
+export async function getCustomerOrders(
+  customerId: number | string,
+): Promise<OfflineOrderDetailResponse[]> {
+  const headers = await getAuthHeader();
+  const response = await apiClient.get<
+    OfflineOrderDetailResponse[] | PaginatedOfflineOrdersResponse
+  >(ORDERS_ENDPOINT, {
+    headers,
+    params: { customer: customerId },
+  });
+
+  if (Array.isArray(response.data)) {
+    return response.data;
+  }
+
+  if (response.data && Array.isArray(response.data.results)) {
+    return response.data.results;
+  }
+
+  return [];
+}
+
+/**
  * Fetch a single order by order code.
  */
 export async function getOfflineOrderDetail(

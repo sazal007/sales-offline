@@ -1,6 +1,6 @@
 // src/app/customers/[id].tsx — Customer Details Screen
 
-import React, { useMemo, useState } from "react";
+import React, { useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -19,6 +19,7 @@ import {
   CheckCircle2,
   Clock,
   MapPin,
+  Package,
   Pencil,
   Phone,
   Receipt,
@@ -31,6 +32,7 @@ import {
   useCustomerDetailQuery,
   useDeleteCustomerMutation,
 } from "@/hooks/useCustomerQueries";
+import { useCustomerOrdersQuery } from "@/hooks/useOfflineOrderQueries";
 import { CustomerFormModal } from "@/components/customers/CustomerFormModal";
 import { useAuth } from "@/context/AuthContext";
 import type { OfflineCustomer } from "@/types/customer";
@@ -56,6 +58,12 @@ export default function CustomerDetailScreen() {
 
   const deleteMutation = useDeleteCustomerMutation();
 
+  // Query customer's orders from /api/offline-sales/orders/?customer={id}
+  const {
+    data: customerOrders = [],
+    isLoading: isLoadingOrders,
+  } = useCustomerOrdersQuery(customerId);
+
   if (isAuthLoading) {
     return (
       <View className="flex-1 items-center justify-center bg-background">
@@ -73,20 +81,6 @@ export default function CustomerDetailScreen() {
   const totalPurchased = Number(customer?.total_purchased_amount || 0);
   const totalPaid = Number(customer?.total_paid_amount || 0);
   const totalRemaining = Number(customer?.total_remaining_amount || 0);
-
-  const { paidPercentage, remainingPercentage } = useMemo(() => {
-    if (totalPurchased <= 0) {
-      return { paidPercentage: 100, remainingPercentage: 0 };
-    }
-    const paidPct = Math.min(
-      100,
-      Math.max(0, Math.round((totalPaid / totalPurchased) * 100)),
-    );
-    return {
-      paidPercentage: paidPct,
-      remainingPercentage: 100 - paidPct,
-    };
-  }, [totalPurchased, totalPaid]);
 
   const handleCall = (phoneNumber?: string) => {
     if (!phoneNumber) {
@@ -213,18 +207,16 @@ export default function CustomerDetailScreen() {
         >
           {/* 1. Store Header & Identity Card */}
           <View className="rounded-2xl border border-border bg-surface p-4 shadow-sm">
-            <View className="flex-row items-start justify-between">
-              <View className="flex-1 flex-row items-center gap-3">
-                <View className="h-12 w-12 items-center justify-center rounded-2xl bg-brand/10">
-                  <Store size={24} color="#e8452c" />
-                </View>
-                <View className="flex-1">
-                  <Text className="text-lg font-bold text-ink">
-                    {customer.store_name}
-                  </Text>
-                </View>
+            {/* Store name + active badge on one compact row */}
+            <View className="flex-row items-center gap-3">
+              <View className="h-10 w-10 items-center justify-center rounded-xl bg-brand/10">
+                <Store size={20} color="#e8452c" />
               </View>
-
+              <View className="flex-1">
+                <Text className="text-base font-bold text-ink">
+                  {customer.store_name}
+                </Text>
+              </View>
               {customer.is_active !== undefined && (
                 <View
                   className={`rounded-full px-2.5 py-1 ${
@@ -235,9 +227,7 @@ export default function CustomerDetailScreen() {
                 >
                   <Text
                     className={`text-[11px] font-bold ${
-                      customer.is_active
-                        ? "text-emerald-700"
-                        : "text-gray-600"
+                      customer.is_active ? "text-emerald-700" : "text-gray-600"
                     }`}
                   >
                     {customer.is_active ? "Active" : "Inactive"}
@@ -246,66 +236,43 @@ export default function CustomerDetailScreen() {
               )}
             </View>
 
-            <View className="my-3.5 h-px bg-border/60" />
-
-            {/* Contact Person, Phone, Address Info */}
-            <View className="gap-2.5">
+            <View className="mt-3 gap-2">
               {/* Contact Person */}
-              <View className="flex-row items-center gap-2.5">
-                <View className="h-7 w-7 items-center justify-center rounded-lg bg-background">
-                  <User size={14} color="#79726b" />
-                </View>
-                <View className="flex-1">
-                  <Text className="text-[11px] font-medium text-ink-soft">
-                    Contact Person
-                  </Text>
-                  <Text className="text-sm font-semibold text-ink">
-                    {customer.contact_person || "—"}
-                  </Text>
-                </View>
+              <View className="flex-row items-center gap-2">
+                <User size={13} color="#79726b" />
+                <Text className="text-xs text-ink-soft">
+                  {customer.contact_person || "—"}
+                </Text>
               </View>
 
-              {/* Phone Number + Quick Dial */}
+              {/* Phone + Call button */}
               <View className="flex-row items-center justify-between">
-                <View className="flex-1 flex-row items-center gap-2.5">
-                  <View className="h-7 w-7 items-center justify-center rounded-lg bg-background">
-                    <Phone size={14} color="#79726b" />
-                  </View>
-                  <View className="flex-1">
-                    <Text className="text-[11px] font-medium text-ink-soft">
-                      Phone Number
-                    </Text>
-                    <Text className="text-sm font-semibold text-ink">
-                      {customer.phone_number || "—"}
-                    </Text>
-                  </View>
+                <View className="flex-row items-center gap-2">
+                  <Phone size={13} color="#79726b" />
+                  <Text className="text-xs text-ink-soft">
+                    {customer.phone_number || "—"}
+                  </Text>
                 </View>
-
                 {Boolean(customer.phone_number) && (
                   <Pressable
                     onPress={() => handleCall(customer.phone_number)}
-                    className="flex-row items-center gap-1.5 rounded-xl bg-brand/10 px-3 py-1.5 active:opacity-75"
+                    className="flex-row items-center gap-1 rounded-lg bg-brand/10 px-2.5 py-1 active:opacity-75"
                   >
-                    <Phone size={12} color="#e8452c" />
-                    <Text className="text-xs font-bold text-brand">Call</Text>
+                    <Phone size={11} color="#e8452c" />
+                    <Text className="text-[11px] font-bold text-brand">Call</Text>
                   </Pressable>
                 )}
               </View>
 
               {/* Address */}
-              <View className="flex-row items-start gap-2.5">
-                <View className="h-7 w-7 items-center justify-center rounded-lg bg-background">
-                  <MapPin size={14} color="#79726b" />
-                </View>
-                <View className="flex-1">
-                  <Text className="text-[11px] font-medium text-ink-soft">
-                    Store Address
-                  </Text>
-                  <Text className="text-sm font-medium leading-5 text-ink">
-                    {customer.address || "No address specified"}
+              {Boolean(customer.address) && (
+                <View className="flex-row items-start gap-2">
+                  <MapPin size={13} color="#79726b" />
+                  <Text className="flex-1 text-xs leading-4 text-ink-soft">
+                    {customer.address}
                   </Text>
                 </View>
-              </View>
+              )}
             </View>
           </View>
 
@@ -354,107 +321,145 @@ export default function CustomerDetailScreen() {
               </View>
 
               {/* Total Paid Card */}
-              <View className="flex-1 min-w-[45%] rounded-2xl border border-emerald-200 bg-emerald-50/50 p-3.5 shadow-sm">
+              <View className="flex-1 min-w-[45%] rounded-2xl border border-border bg-surface p-3.5 shadow-sm">
                 <View className="flex-row items-center justify-between">
-                  <Text className="text-xs font-semibold text-emerald-800">
+                  <Text className="text-xs font-medium text-ink-soft">
                     Total Paid
                   </Text>
-                  <View className="h-7 w-7 items-center justify-center rounded-lg bg-emerald-100">
+                  <View className="h-7 w-7 items-center justify-center rounded-lg bg-emerald-50">
                     <CheckCircle2 size={14} color="#059669" />
                   </View>
                 </View>
-                <Text className="mt-2 text-xl font-bold text-emerald-800">
+                <Text className="mt-2 text-xl font-bold text-emerald-600">
                   {formatCurrency(totalPaid)}
                 </Text>
-                <Text className="mt-0.5 text-[11px] text-emerald-700">
+                <Text className="mt-0.5 text-[11px] text-ink-soft">
                   Collected amount
                 </Text>
               </View>
 
               {/* Remaining Balance Card */}
-              <View
-                className={`flex-1 min-w-[45%] rounded-2xl border p-3.5 shadow-sm ${
-                  totalRemaining > 0
-                    ? "border-amber-200 bg-amber-50/60"
-                    : "border-border bg-surface"
-                }`}
-              >
+              <View className="flex-1 min-w-[45%] rounded-2xl border border-border bg-surface p-3.5 shadow-sm">
                 <View className="flex-row items-center justify-between">
-                  <Text
-                    className={`text-xs font-semibold ${
-                      totalRemaining > 0 ? "text-amber-800" : "text-ink-soft"
-                    }`}
-                  >
+                  <Text className="text-xs font-medium text-ink-soft">
                     Remaining Due
                   </Text>
-                  <View
-                    className={`h-7 w-7 items-center justify-center rounded-lg ${
-                      totalRemaining > 0 ? "bg-amber-100" : "bg-background"
-                    }`}
-                  >
-                    <Clock
-                      size={14}
-                      color={totalRemaining > 0 ? "#d97706" : "#79726b"}
-                    />
+                  <View className="h-7 w-7 items-center justify-center rounded-lg bg-amber-50">
+                    <Clock size={14} color="#d97706" />
                   </View>
                 </View>
-                <Text
-                  className={`mt-2 text-xl font-bold ${
-                    totalRemaining > 0 ? "text-amber-900" : "text-ink"
-                  }`}
-                >
+                <Text className={`mt-2 text-xl font-bold ${totalRemaining > 0 ? "text-amber-600" : "text-ink"}`}>
                   {formatCurrency(totalRemaining)}
                 </Text>
-                <Text
-                  className={`mt-0.5 text-[11px] ${
-                    totalRemaining > 0 ? "text-amber-700" : "text-ink-soft"
-                  }`}
-                >
+                <Text className="mt-0.5 text-[11px] text-ink-soft">
                   Outstanding balance
                 </Text>
               </View>
             </View>
+          </View>
 
-            {/* Payment Progress Bar */}
-            {totalPurchased > 0 && (
-              <View className="mt-3 rounded-2xl border border-border bg-surface p-3.5 shadow-sm">
-                <View className="flex-row items-center justify-between text-xs">
-                  <Text className="text-xs font-semibold text-ink">
-                    Payment Status
-                  </Text>
-                  <Text className="text-xs font-bold text-brand">
-                    {paidPercentage}% Paid
-                  </Text>
-                </View>
+          {/* 3. Order History Section */}
+          <View>
+            <Text className="mb-2 text-xs font-bold uppercase tracking-wider text-ink-soft">
+              Order History ({customerOrders.length})
+            </Text>
 
-                {/* Progress bar track */}
-                <View className="mt-2.5 h-2 w-full flex-row overflow-hidden rounded-full bg-border">
-                  <View
-                    style={{ width: `${paidPercentage}%` }}
-                    className="h-full bg-emerald-500 rounded-full"
-                  />
-                  {remainingPercentage > 0 && (
+            {isLoadingOrders ? (
+              <View className="items-center justify-center rounded-2xl border border-border bg-surface py-6">
+                <ActivityIndicator size="small" color="#e8452c" />
+              </View>
+            ) : customerOrders.length === 0 ? (
+              <View className="items-center justify-center rounded-2xl border border-dashed border-border bg-surface py-8 gap-1.5">
+                <Package size={24} color="#79726b" />
+                <Text className="text-xs text-ink-soft">No orders yet</Text>
+              </View>
+            ) : (
+              <View className="gap-2.5">
+                {customerOrders.map((order) => {
+                  const isDelivered = order.order_status === "Delivered";
+                  const isCancelled = order.order_status === "Cancelled";
+                  const statusTextColor = isDelivered
+                    ? "text-emerald-700"
+                    : isCancelled
+                      ? "text-red-700"
+                      : "text-amber-700";
+                  const statusBg = isDelivered
+                    ? "bg-emerald-50 border-emerald-200"
+                    : isCancelled
+                      ? "bg-red-50 border-red-200"
+                      : "bg-amber-50 border-amber-200";
+
+                  return (
                     <View
-                      style={{ width: `${remainingPercentage}%` }}
-                      className="h-full bg-amber-500 rounded-full"
-                    />
-                  )}
-                </View>
+                      key={order.id ?? order.order_code}
+                      className="rounded-2xl border border-border bg-surface p-4 shadow-sm"
+                    >
+                      {/* Header: order code + status badge */}
+                      <View className="flex-row items-center justify-between">
+                        <View className="flex-row items-center gap-2">
+                          <View className="h-7 w-7 items-center justify-center rounded-lg bg-brand/10">
+                            <Package size={14} color="#e8452c" />
+                          </View>
+                          <Text className="text-sm font-bold text-ink">
+                            {order.order_code}
+                          </Text>
+                        </View>
+                        <View
+                          className={`rounded-full border px-2.5 py-0.5 ${statusBg}`}
+                        >
+                          <Text
+                            className={`text-[11px] font-bold ${statusTextColor}`}
+                          >
+                            {order.order_status}
+                          </Text>
+                        </View>
+                      </View>
 
-                <View className="mt-2.5 flex-row items-center justify-between">
-                  <View className="flex-row items-center gap-1.5">
-                    <View className="h-2 w-2 rounded-full bg-emerald-500" />
-                    <Text className="text-[11px] font-medium text-ink-soft">
-                      Paid: {formatCurrency(totalPaid)}
-                    </Text>
-                  </View>
-                  <View className="flex-row items-center gap-1.5">
-                    <View className="h-2 w-2 rounded-full bg-amber-500" />
-                    <Text className="text-[11px] font-medium text-ink-soft">
-                      Due: {formatCurrency(totalRemaining)}
-                    </Text>
-                  </View>
-                </View>
+                      {/* Divider */}
+                      <View className="my-3 h-px bg-border/60" />
+
+                      {/* Amounts + Date row */}
+                      <View className="flex-row items-center justify-between">
+                        <View>
+                          <Text className="text-[10px] font-semibold uppercase text-ink-soft">
+                            Total
+                          </Text>
+                          <Text className="text-xs font-bold text-ink">
+                            Rs. {Number(order.total_amount).toLocaleString()}
+                          </Text>
+                        </View>
+                        <View>
+                          <Text className="text-[10px] font-semibold uppercase text-ink-soft">
+                            Paid
+                          </Text>
+                          <Text className="text-xs font-bold text-emerald-600">
+                            Rs.{" "}
+                            {Number(order.paid_amount ?? 0).toLocaleString()}
+                          </Text>
+                        </View>
+                        <View>
+                          <Text className="text-[10px] font-semibold uppercase text-ink-soft">
+                            Balance
+                          </Text>
+                          <Text className="text-xs font-bold text-amber-600">
+                            Rs.{" "}
+                            {Number(
+                              order.remaining_amount ?? 0,
+                            ).toLocaleString()}
+                          </Text>
+                        </View>
+                        <View className="items-end">
+                          <Text className="text-[10px] font-semibold uppercase text-ink-soft">
+                            Date
+                          </Text>
+                          <Text className="text-xs text-ink-soft">
+                            {order.order_date}
+                          </Text>
+                        </View>
+                      </View>
+                    </View>
+                  );
+                })}
               </View>
             )}
           </View>
