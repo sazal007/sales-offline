@@ -13,7 +13,6 @@ import { Image } from "expo-image";
 import {
   Clock,
   CreditCard,
-  Edit2,
   FileText,
   Package,
   Phone,
@@ -140,9 +139,22 @@ export function OrderDetailView({
 
       {/* 2. Financial Breakdown Section */}
       <View>
-        <Text className="mb-2 text-xs font-bold uppercase tracking-wider text-ink-soft">
-          Financial Breakdown
-        </Text>
+        <View className="mb-2 flex-row items-center justify-between">
+          <Text className="text-xs font-bold uppercase tracking-wider text-ink-soft">
+            Financial Breakdown
+          </Text>
+          {remainingAmount > 0 && order.order_status !== "Cancelled" && (
+            <Pressable
+              onPress={() => onRecordPayment(order)}
+              className="flex-row items-center gap-1.5 rounded-lg bg-brand/10 px-2.5 py-1 active:opacity-75"
+            >
+              <PlusCircle size={12} color="#e8452c" strokeWidth={2.2} />
+              <Text className="text-xs font-bold text-brand">
+                Record Payment
+              </Text>
+            </Pressable>
+          )}
+        </View>
 
         {/* 3-card row: Total, Paid, Balance */}
         <View className="flex-row gap-2.5">
@@ -155,38 +167,41 @@ export function OrderDetailView({
           </View>
 
           {/* Paid Amount */}
-          <View className="flex-1 rounded-2xl border border-emerald-200 bg-emerald-50/60 p-3 shadow-sm">
-            <Text className="text-[11px] font-semibold text-emerald-800">
+          <View className="flex-1 rounded-2xl border border-border bg-surface p-3 shadow-sm">
+            <Text className="text-[11px] font-medium text-ink-soft">
               Paid
             </Text>
-            <Text className="mt-1 text-base font-bold text-emerald-800">
+            <Text className="mt-1 text-base font-bold text-emerald-600">
               {formatCurrency(paidAmount)}
             </Text>
           </View>
 
           {/* Remaining Balance */}
-          <View
-            className={`flex-1 rounded-2xl border p-3 shadow-sm ${
-              remainingAmount > 0
-                ? "border-amber-200 bg-amber-50/70"
-                : "border-border bg-surface"
-            }`}
+          <Pressable
+            onPress={() => {
+              if (remainingAmount > 0 && order.order_status !== "Cancelled") {
+                onRecordPayment(order);
+              }
+            }}
+            disabled={remainingAmount <= 0 || order.order_status === "Cancelled"}
+            className="flex-1 rounded-2xl border border-border bg-surface p-3 shadow-sm active:opacity-80"
           >
-            <Text
-              className={`text-[11px] font-semibold ${
-                remainingAmount > 0 ? "text-amber-800" : "text-ink-soft"
-              }`}
-            >
-              Balance
-            </Text>
+            <View className="flex-row items-center justify-between">
+              <Text className="text-[11px] font-medium text-ink-soft">
+                Balance
+              </Text>
+              {remainingAmount > 0 && order.order_status !== "Cancelled" && (
+                <Text className="text-[10px] font-bold text-brand">Pay →</Text>
+              )}
+            </View>
             <Text
               className={`mt-1 text-base font-bold ${
-                remainingAmount > 0 ? "text-amber-900" : "text-ink"
+                remainingAmount > 0 ? "text-amber-600" : "text-ink"
               }`}
             >
               {formatCurrency(remainingAmount)}
             </Text>
-          </View>
+          </Pressable>
         </View>
 
         {/* Progress Bar */}
@@ -381,51 +396,27 @@ export function OrderDetailView({
         </View>
       )}
 
-      {/* 6. Action Buttons */}
-      <View className="mt-2 gap-2.5">
-        {/* Record Payment — only when there's an outstanding balance */}
-        {remainingAmount > 0 && order.order_status !== "Cancelled" && (
+      {/* 6. Cancel Action (if eligible) */}
+      {order.order_status !== "Cancelled" && (
+        <View className="mt-1">
           <Pressable
-            onPress={() => onRecordPayment(order)}
-            className="h-12 flex-row items-center justify-center gap-2 rounded-xl bg-brand shadow-sm active:opacity-85"
+            onPress={() => onCancel(order)}
+            disabled={isCancelling}
+            className="h-11 flex-row items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 active:opacity-75"
           >
-            <PlusCircle size={16} color="#ffffff" strokeWidth={2.2} />
-            <Text className="text-sm font-bold text-white">
-              Record Payment
-            </Text>
+            {isCancelling ? (
+              <ActivityIndicator size="small" color="#e8452c" />
+            ) : (
+              <>
+                <XCircle size={15} color="#e8452c" strokeWidth={2.2} />
+                <Text className="text-sm font-bold text-brand">
+                  Cancel Order
+                </Text>
+              </>
+            )}
           </Pressable>
-        )}
-
-        {/* Edit + Cancel row */}
-        <View className="flex-row items-center gap-2.5">
-          <Pressable
-            onPress={() => onEdit(order)}
-            className="h-12 flex-1 flex-row items-center justify-center gap-2 rounded-xl border border-border bg-surface active:opacity-80"
-          >
-            <Edit2 size={15} color="#241a12" strokeWidth={2.2} />
-            <Text className="text-sm font-bold text-ink">Edit Order</Text>
-          </Pressable>
-
-          {order.order_status !== "Cancelled" && (
-            <Pressable
-              onPress={() => onCancel(order)}
-              disabled={isCancelling}
-              className="h-12 flex-1 flex-row items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 active:opacity-75"
-            >
-              {isCancelling ? (
-                <ActivityIndicator size="small" color="#e8452c" />
-              ) : (
-                <>
-                  <XCircle size={15} color="#e8452c" strokeWidth={2.2} />
-                  <Text className="text-sm font-bold text-brand">
-                    Cancel Order
-                  </Text>
-                </>
-              )}
-            </Pressable>
-          )}
         </View>
-      </View>
+      )}
     </View>
   );
 }

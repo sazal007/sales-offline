@@ -1,22 +1,30 @@
 // src/app/customers/[id].tsx — Customer Details Screen
 
-import React, { useState } from "react";
+import { CustomerFormModal } from "@/components/customers/CustomerFormModal";
+import { RecordPaymentModal } from "@/components/payments/RecordPaymentModal";
+import { OrderDetailModal } from "@/components/orders/OrderDetailModal";
+import { useAuth } from "@/context/AuthContext";
 import {
-  ActivityIndicator,
-  Alert,
-  Linking,
-  Pressable,
-  RefreshControl,
-  ScrollView,
-  Text,
-  View,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+  useCustomerDetailQuery,
+  useDeleteCustomerMutation,
+} from "@/hooks/useCustomerQueries";
+import {
+  useCustomerOrdersQuery,
+  useUpdateOfflineOrderMutation,
+  useCancelOfflineOrderMutation,
+  useProductsQuery,
+} from "@/hooks/useOfflineOrderQueries";
+import type { OfflineCustomer } from "@/types/customer";
+import type {
+  OfflineOrderDetailResponse,
+  UpdateOfflineOrderPayload,
+} from "@/types/offlineSales";
 import { Redirect, useLocalSearchParams, useRouter } from "expo-router";
 import {
   AlertCircle,
   ArrowLeft,
   CheckCircle2,
+  ChevronRight,
   Clock,
   MapPin,
   Package,
@@ -29,15 +37,18 @@ import {
   Trash2,
   User,
 } from "lucide-react-native";
+import { useState } from "react";
 import {
-  useCustomerDetailQuery,
-  useDeleteCustomerMutation,
-} from "@/hooks/useCustomerQueries";
-import { useCustomerOrdersQuery } from "@/hooks/useOfflineOrderQueries";
-import { CustomerFormModal } from "@/components/customers/CustomerFormModal";
-import { RecordPaymentModal } from "@/components/payments/RecordPaymentModal";
-import { useAuth } from "@/context/AuthContext";
-import type { OfflineCustomer } from "@/types/customer";
+  ActivityIndicator,
+  Alert,
+  Linking,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  Text,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function CustomerDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -62,10 +73,67 @@ export default function CustomerDetailScreen() {
   const deleteMutation = useDeleteCustomerMutation();
 
   // Query customer's orders from /api/offline-sales/orders/?customer={id}
-  const {
-    data: customerOrders = [],
-    isLoading: isLoadingOrders,
-  } = useCustomerOrdersQuery(customerId);
+  const { data: customerOrders = [], isLoading: isLoadingOrders } =
+    useCustomerOrdersQuery(customerId);
+
+  // Order Detail & Edit Modal State
+  const [selectedOrder, setSelectedOrder] =
+    useState<OfflineOrderDetailResponse | null>(null);
+  const [orderDetailVisible, setOrderDetailVisible] = useState(false);
+  const [isEditingOrder, setIsEditingOrder] = useState(false);
+
+  const updateOrderMutation = useUpdateOfflineOrderMutation();
+  const cancelOrderMutation = useCancelOfflineOrderMutation();
+  const { data: products = [] } = useProductsQuery();
+
+  const handleOpenOrderDetail = (order: OfflineOrderDetailResponse) => {
+    setSelectedOrder(order);
+    setIsEditingOrder(false);
+    setOrderDetailVisible(true);
+  };
+
+  const handleCloseOrderDetail = () => {
+    setOrderDetailVisible(false);
+    setIsEditingOrder(false);
+  };
+
+  const handleSaveEditOrder = async (payload: UpdateOfflineOrderPayload) => {
+    if (!selectedOrder) return;
+    const updated = await updateOrderMutation.mutateAsync({
+      orderCode: selectedOrder.order_code,
+      payload,
+    });
+    setSelectedOrder(updated);
+    setIsEditingOrder(false);
+    Alert.alert(
+      "Order Updated",
+      `Order ${selectedOrder.order_code} has been successfully updated.`,
+    );
+  };
+
+  const handleCancelOrder = (order: OfflineOrderDetailResponse) => {
+    Alert.alert(
+      "Cancel Order",
+      `Are you sure you want to cancel order ${order.order_code}? Stock will not be automatically restored if already finalized.`,
+      [
+        { text: "No, keep it", style: "cancel" },
+        {
+          text: "Yes, Cancel Order",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await cancelOrderMutation.mutateAsync(order.order_code);
+              setOrderDetailVisible(false);
+            } catch (err: unknown) {
+              const msg =
+                err instanceof Error ? err.message : "Failed to cancel order.";
+              Alert.alert("Error", msg);
+            }
+          },
+        },
+      ],
+    );
+  };
 
   if (isAuthLoading) {
     return (
@@ -87,7 +155,10 @@ export default function CustomerDetailScreen() {
 
   const handleCall = (phoneNumber?: string) => {
     if (!phoneNumber) {
-      Alert.alert("No Phone Number", "This customer has no phone number recorded.");
+      Alert.alert(
+        "No Phone Number",
+        "This customer has no phone number recorded.",
+      );
       return;
     }
     Linking.openURL(`tel:${phoneNumber}`).catch(() => {
@@ -131,7 +202,7 @@ export default function CustomerDetailScreen() {
     <SafeAreaView edges={["top"]} className="flex-1 bg-background">
       {/* Top Navigation Bar */}
       <View className="flex-row items-center justify-between border-b border-border bg-background px-4 py-3">
-        <View className="flex-row items-center gap-3">
+        <View className="flex-1 flex-row items-center gap-3 pr-2">
           <Pressable
             onPress={() => router.back()}
             hitSlop={8}
@@ -139,18 +210,22 @@ export default function CustomerDetailScreen() {
           >
             <ArrowLeft size={18} color="#241a12" strokeWidth={2.2} />
           </Pressable>
-          <View>
-            <Text className="text-base font-bold text-ink">Customer Details</Text>
-            {Boolean(customer?.store_name) && (
-              <Text numberOfLines={1} className="text-xs text-ink-soft">
-                {customer?.store_name}
-              </Text>
-            )}
-          </View>
         </View>
 
         {customer && (
           <View className="flex-row items-center gap-2">
+            {totalRemaining > 0 && (
+              <Pressable
+                onPress={() => setPaymentModalVisible(true)}
+                hitSlop={4}
+                className="flex-row items-center gap-1.5 rounded-xl bg-brand px-3 py-2 shadow-sm active:opacity-85"
+              >
+                <PlusCircle size={13} color="#ffffff" strokeWidth={2.2} />
+                <Text className="text-xs font-bold text-white">
+                  Record Payment
+                </Text>
+              </Pressable>
+            )}
             <Pressable
               onPress={() => setEditModalVisible(true)}
               hitSlop={6}
@@ -262,7 +337,9 @@ export default function CustomerDetailScreen() {
                     className="flex-row items-center gap-1 rounded-lg bg-brand/10 px-2.5 py-1 active:opacity-75"
                   >
                     <Phone size={11} color="#e8452c" />
-                    <Text className="text-[11px] font-bold text-brand">Call</Text>
+                    <Text className="text-[11px] font-bold text-brand">
+                      Call
+                    </Text>
                   </Pressable>
                 )}
               </View>
@@ -281,9 +358,22 @@ export default function CustomerDetailScreen() {
 
           {/* 2. Financial Overview Section */}
           <View>
-            <Text className="mb-2 text-xs font-bold uppercase tracking-wider text-ink-soft">
-              Financial & Sales Overview
-            </Text>
+            <View className="mb-2 flex-row items-center justify-between">
+              <Text className="text-xs font-bold uppercase tracking-wider text-ink-soft">
+                Financial & Sales Overview
+              </Text>
+              {totalRemaining > 0 && (
+                <Pressable
+                  onPress={() => setPaymentModalVisible(true)}
+                  className="flex-row items-center gap-1.5 rounded-lg bg-brand/10 px-2.5 py-1 active:opacity-75"
+                >
+                  <PlusCircle size={12} color="#e8452c" strokeWidth={2.2} />
+                  <Text className="text-xs font-bold text-brand">
+                    Record Payment
+                  </Text>
+                </Pressable>
+              )}
+            </View>
 
             {/* 2x2 Metric Cards Grid */}
             <View className="flex-row flex-wrap gap-3">
@@ -342,7 +432,13 @@ export default function CustomerDetailScreen() {
               </View>
 
               {/* Remaining Balance Card */}
-              <View className="flex-1 min-w-[45%] rounded-2xl border border-border bg-surface p-3.5 shadow-sm">
+              <Pressable
+                onPress={() => {
+                  if (totalRemaining > 0) setPaymentModalVisible(true);
+                }}
+                disabled={totalRemaining <= 0}
+                className="flex-1 min-w-[45%] rounded-2xl border border-border bg-surface p-3.5 shadow-sm active:opacity-80"
+              >
                 <View className="flex-row items-center justify-between">
                   <Text className="text-xs font-medium text-ink-soft">
                     Remaining Due
@@ -351,13 +447,24 @@ export default function CustomerDetailScreen() {
                     <Clock size={14} color="#d97706" />
                   </View>
                 </View>
-                <Text className={`mt-2 text-xl font-bold ${totalRemaining > 0 ? "text-amber-600" : "text-ink"}`}>
+                <Text
+                  className={`mt-2 text-xl font-bold ${
+                    totalRemaining > 0 ? "text-amber-600" : "text-ink"
+                  }`}
+                >
                   {formatCurrency(totalRemaining)}
                 </Text>
-                <Text className="mt-0.5 text-[11px] text-ink-soft">
-                  Outstanding balance
-                </Text>
-              </View>
+                <View className="mt-0.5 flex-row items-center justify-between">
+                  <Text className="text-[11px] text-ink-soft">
+                    Outstanding balance
+                  </Text>
+                  {totalRemaining > 0 && (
+                    <Text className="text-[11px] font-bold text-brand">
+                      Pay →
+                    </Text>
+                  )}
+                </View>
+              </Pressable>
             </View>
           </View>
 
@@ -393,9 +500,10 @@ export default function CustomerDetailScreen() {
                       : "bg-amber-50 border-amber-200";
 
                   return (
-                    <View
+                    <Pressable
                       key={order.id ?? order.order_code}
-                      className="rounded-2xl border border-border bg-surface p-4 shadow-sm"
+                      onPress={() => handleOpenOrderDetail(order)}
+                      className="rounded-2xl border border-border bg-surface p-4 shadow-sm active:opacity-85"
                     >
                       {/* Header: order code + status badge */}
                       <View className="flex-row items-center justify-between">
@@ -406,6 +514,7 @@ export default function CustomerDetailScreen() {
                           <Text className="text-sm font-bold text-ink">
                             {order.order_code}
                           </Text>
+                          <ChevronRight size={14} color="#79726b" />
                         </View>
                         <View
                           className={`rounded-full border px-2.5 py-0.5 ${statusBg}`}
@@ -460,47 +569,11 @@ export default function CustomerDetailScreen() {
                           </Text>
                         </View>
                       </View>
-                    </View>
+                    </Pressable>
                   );
                 })}
               </View>
             )}
-          </View>
-
-          {/* Action Buttons */}
-          <View className="mt-2 gap-2.5">
-            {/* Record Payment — only when customer has outstanding balance */}
-            {totalRemaining > 0 && (
-              <Pressable
-                onPress={() => setPaymentModalVisible(true)}
-                className="h-12 flex-row items-center justify-center gap-2 rounded-xl bg-brand shadow-sm active:opacity-85"
-              >
-                <PlusCircle size={16} color="#ffffff" strokeWidth={2.2} />
-                <Text className="text-sm font-bold text-white">
-                  Record Payment
-                </Text>
-              </Pressable>
-            )}
-
-            <View className="flex-row gap-3">
-              {Boolean(customer.phone_number) && (
-                <Pressable
-                  onPress={() => handleCall(customer.phone_number)}
-                  className="flex-1 flex-row items-center justify-center gap-2 rounded-xl border border-border bg-surface py-3 active:opacity-75"
-                >
-                  <Phone size={15} color="#241a12" strokeWidth={2.2} />
-                  <Text className="text-sm font-bold text-ink">Call</Text>
-                </Pressable>
-              )}
-
-              <Pressable
-                onPress={() => setEditModalVisible(true)}
-                className="flex-1 flex-row items-center justify-center gap-2 rounded-xl border border-border bg-surface py-3 active:opacity-75"
-              >
-                <Pencil size={15} color="#241a12" strokeWidth={2} />
-                <Text className="text-sm font-bold text-ink">Edit Store</Text>
-              </Pressable>
-            </View>
           </View>
         </ScrollView>
       )}
@@ -530,6 +603,21 @@ export default function CustomerDetailScreen() {
             }))}
         />
       )}
+
+      {/* Order Detail & Edit Modal */}
+      <OrderDetailModal
+        visible={orderDetailVisible}
+        order={selectedOrder}
+        isEditing={isEditingOrder}
+        onStartEdit={() => setIsEditingOrder(true)}
+        onCancelEdit={() => setIsEditingOrder(false)}
+        onClose={handleCloseOrderDetail}
+        onSaveEdit={handleSaveEditOrder}
+        onCancelOrder={handleCancelOrder}
+        isSaving={updateOrderMutation.isPending}
+        isCancelling={cancelOrderMutation.isPending}
+        products={products}
+      />
     </SafeAreaView>
   );
 }

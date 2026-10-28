@@ -1,26 +1,26 @@
 // src/components/orders/OrderDetailModal.tsx
 
-import React, { useState } from "react";
-import {
-  Modal,
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  View,
-  Text,
-  ScrollView,
-  ActivityIndicator,
-} from "react-native";
-import { X, Edit2 } from "lucide-react-native";
+import { RecordPaymentModal } from "@/components/payments/RecordPaymentModal";
+import { useOfflineOrderDetailQuery } from "@/hooks/useOfflineOrderQueries";
 import type {
   OfflineOrderDetailResponse,
-  UpdateOfflineOrderPayload,
   Product,
+  UpdateOfflineOrderPayload,
 } from "@/types/offlineSales";
-import { useOfflineOrderDetailQuery } from "@/hooks/useOfflineOrderQueries";
+import { Edit2, PlusCircle, X } from "lucide-react-native";
+import { useState } from "react";
+import {
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  Pressable,
+  ScrollView,
+  Text,
+  View,
+} from "react-native";
 import { OrderDetailView } from "./OrderDetailView";
 import { OrderEditView } from "./OrderEditView";
-import { RecordPaymentModal } from "@/components/payments/RecordPaymentModal";
 
 interface OrderDetailModalProps {
   visible: boolean;
@@ -92,14 +92,29 @@ export function OrderDetailModal({
                   </View>
                 )}
               </View>
-              <Text className="mt-0.5 text-xs text-ink-soft">
+              {/* <Text className="mt-0.5 text-xs text-ink-soft">
                 {isEditing
                   ? `${activeOrder.order_code} • ${activeOrder.customer_name}`
-                  : activeOrder.customer_name || `Customer #${activeOrder.customer}`}
-              </Text>
+                  : activeOrder.customer_name ||
+                    `Customer #${activeOrder.customer}`}
+              </Text> */}
             </View>
 
             <View className="flex-row items-center gap-2">
+              {!isEditing &&
+                Number(activeOrder.remaining_amount || 0) > 0 &&
+                activeOrder.order_status !== "Cancelled" && (
+                  <Pressable
+                    onPress={() => setPaymentModalVisible(true)}
+                    className="flex-row items-center gap-1.5 rounded-full bg-brand px-3 py-1.5 active:opacity-85 shadow-sm"
+                    hitSlop={6}
+                  >
+                    <PlusCircle size={13} color="#ffffff" strokeWidth={2.2} />
+                    <Text className="text-xs font-bold text-white">
+                      Record Payment
+                    </Text>
+                  </Pressable>
+                )}
               {!isEditing && (
                 <Pressable
                   onPress={onStartEdit}
@@ -134,7 +149,8 @@ export function OrderDetailModal({
                 isSaving={isSaving}
                 products={products}
               />
-            ) : isLoadingDetail && (!activeOrder.items || activeOrder.items.length === 0) ? (
+            ) : isLoadingDetail &&
+              (!activeOrder.items || activeOrder.items.length === 0) ? (
               <View className="items-center justify-center py-12">
                 <ActivityIndicator size="small" color="#e8452c" />
                 <Text className="mt-2 text-xs text-ink-soft">
@@ -161,7 +177,11 @@ export function OrderDetailModal({
         orderId={activeOrder.id}
         orderCode={activeOrder.order_code}
         remainingAmount={activeOrder.remaining_amount}
-        customerId={typeof activeOrder.customer === "number" ? activeOrder.customer : undefined}
+        customerId={
+          typeof activeOrder.customer === "number"
+            ? activeOrder.customer
+            : undefined
+        }
       />
     </Modal>
   );
