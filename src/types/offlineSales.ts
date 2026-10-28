@@ -118,3 +118,14 @@ export interface Product {
   total_amount?: number;
 }
 
+export interface OfflineSalesStats {
+  total_customers: number;
+  customers_with_pending_credit: number;
+  total_orders: number;
+  pending_orders_count: number;
+  close_to_due_orders_count: number;
+  overdue_orders_count: number;
+  total_order_amount: string;
+  total_paid_amount: string;
+  total_remaining_amount: string;
+}

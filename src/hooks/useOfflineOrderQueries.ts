@@ -10,6 +10,7 @@ import {
   cancelOfflineOrder,
   getFranchiseInventory,
   getProducts,
+  getOfflineSalesStats,
 } from "@/services/order.service";
 import type {
   CreateOfflineOrderPayload,
@@ -146,5 +147,17 @@ export function useProductsQuery() {
   return useQuery({
     queryKey: PRODUCTS_QUERY_KEY,
     queryFn: getProducts,
+  });
+}
+
+export const OFFLINE_SALES_STATS_KEY = ["offlineSalesStats"] as const;
+
+/**
+ * Fetch offline sales stats from /api/offline-sales/stats/
+ */
+export function useOfflineSalesStatsQuery() {
+  return useQuery({
+    queryKey: OFFLINE_SALES_STATS_KEY,
+    queryFn: getOfflineSalesStats,
   });
 }

@@ -9,14 +9,28 @@ import type {
   PaginatedOfflineOrdersResponse,
   FranchiseInventoryItem,
   Product,
+  OfflineSalesStats,
 } from "@/types/offlineSales";
 
 const ORDERS_ENDPOINT = "/api/offline-sales/orders/";
 const INVENTORY_ENDPOINT = "/api/sales/franchise-inventory/";
+const STATS_ENDPOINT = "/api/offline-sales/stats/";
 
 async function getAuthHeader() {
   const token = await SecureStore.getItemAsync("cem_access_token");
   return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
+/**
+ * Fetch offline sales stats summary.
+ * Endpoint: /api/offline-sales/stats/
+ */
+export async function getOfflineSalesStats(): Promise<OfflineSalesStats> {
+  const headers = await getAuthHeader();
+  const response = await apiClient.get<OfflineSalesStats>(STATS_ENDPOINT, {
+    headers,
+  });
+  return response.data;
 }
 
 /**
