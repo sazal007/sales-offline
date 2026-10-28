@@ -11,11 +11,14 @@ import {
   getFranchiseInventory,
   getProducts,
   getOfflineSalesStats,
+  recordOfflinePayment,
 } from "@/services/order.service";
 import type {
   CreateOfflineOrderPayload,
   UpdateOfflineOrderPayload,
   OfflineOrderDetailResponse,
+  RecordOfflinePaymentPayload,
+  OfflinePaymentResponse,
 } from "@/types/offlineSales";
 
 export const OFFLINE_ORDERS_KEY = ["offlineOrders"] as const;
@@ -159,5 +162,44 @@ export function useOfflineSalesStatsQuery() {
   return useQuery({
     queryKey: OFFLINE_SALES_STATS_KEY,
     queryFn: getOfflineSalesStats,
+  });
+}
+
+/**
+ * Record an offline payment mutation.
+ * Endpoint: POST /api/offline-sales/payments/
+ * Invalidates orders, customers, stats, and customer orders on success.
+ */
+export function useRecordOfflinePaymentMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation<
+    OfflinePaymentResponse,
+    Error,
+    RecordOfflinePaymentPayload
+  >({
+    mutationFn: recordOfflinePayment,
+    onSuccess: (data) => {
+      // Refresh all related lists
+      queryClient.invalidateQueries({ queryKey: OFFLINE_ORDERS_KEY });
+      queryClient.invalidateQueries({ queryKey: OFFLINE_SALES_STATS_KEY });
+      queryClient.invalidateQueries({ queryKey: ["customers"] });
+      queryClient.invalidateQueries({ queryKey: CUSTOMER_ORDERS_KEY });
+      // Refresh the specific order detail
+      if (data.order_code) {
+        queryClient.invalidateQueries({
+          queryKey: [...OFFLINE_ORDERS_KEY, data.order_code],
+        });
+      }
+      // Refresh the specific customer's data
+      if (data.customer) {
+        queryClient.invalidateQueries({
+          queryKey: ["customerDetail", String(data.customer)],
+        });
+        queryClient.invalidateQueries({
+          queryKey: [...CUSTOMER_ORDERS_KEY, String(data.customer)],
+        });
+      }
+    },
   });
 }

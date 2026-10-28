@@ -129,3 +129,32 @@ export interface OfflineSalesStats {
   total_paid_amount: string;
   total_remaining_amount: string;
 }
+
+export interface RecordOfflinePaymentPayload {
+  customer?: number;
+  order?: number;
+  order_code?: string;
+  amount: string;
+  payment_method: OfflinePaymentMethod;
+  remarks?: string;
+}
+
+export interface OfflinePaymentResponse {
+  id: number;
+  customer: number | null;
+  customer_id: number | null;
+  order: number | null;
+  order_code: string | null;
+  customer_store_name: string;
+  customer_phone: string;
+  amount: string;
+  payment_method: OfflinePaymentMethod;
+  payment_method_display: string;
+  payment_date: string;
+  payment_screenshot: string | null;
+  remarks: string;
+  recorded_by: number;
+  recorded_by_name: string;
+  created_at: string;
+  updated_at: string;
+}

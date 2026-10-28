@@ -10,11 +10,14 @@ import type {
   FranchiseInventoryItem,
   Product,
   OfflineSalesStats,
+  RecordOfflinePaymentPayload,
+  OfflinePaymentResponse,
 } from "@/types/offlineSales";
 
 const ORDERS_ENDPOINT = "/api/offline-sales/orders/";
 const INVENTORY_ENDPOINT = "/api/sales/franchise-inventory/";
 const STATS_ENDPOINT = "/api/offline-sales/stats/";
+const PAYMENTS_ENDPOINT = "/api/offline-sales/payments/";
 
 async function getAuthHeader() {
   const token = await SecureStore.getItemAsync("cem_access_token");
@@ -30,6 +33,22 @@ export async function getOfflineSalesStats(): Promise<OfflineSalesStats> {
   const response = await apiClient.get<OfflineSalesStats>(STATS_ENDPOINT, {
     headers,
   });
+  return response.data;
+}
+
+/**
+ * Record an offline payment.
+ * Endpoint: POST /api/offline-sales/payments/
+ */
+export async function recordOfflinePayment(
+  payload: RecordOfflinePaymentPayload,
+): Promise<OfflinePaymentResponse> {
+  const headers = await getAuthHeader();
+  const response = await apiClient.post<OfflinePaymentResponse>(
+    PAYMENTS_ENDPOINT,
+    payload,
+    { headers: { ...headers, "Content-Type": "application/json" } },
+  );
   return response.data;
 }
 

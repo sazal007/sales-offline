@@ -17,6 +17,7 @@ import {
   FileText,
   Package,
   Phone,
+  PlusCircle,
   Store,
   User,
   XCircle,
@@ -27,6 +28,7 @@ interface OrderDetailViewProps {
   order: OfflineOrderDetailResponse;
   onEdit: (order: OfflineOrderDetailResponse) => void;
   onCancel: (order: OfflineOrderDetailResponse) => void;
+  onRecordPayment: (order: OfflineOrderDetailResponse) => void;
   isCancelling?: boolean;
 }
 
@@ -34,6 +36,7 @@ export function OrderDetailView({
   order,
   onEdit,
   onCancel,
+  onRecordPayment,
   isCancelling = false,
 }: OrderDetailViewProps) {
   const totalAmount = Number(order.total_amount || 0);
@@ -379,33 +382,49 @@ export function OrderDetailView({
       )}
 
       {/* 6. Action Buttons */}
-      <View className="mt-2 flex-row items-center gap-3">
-        <Pressable
-          onPress={() => onEdit(order)}
-          className="h-12 flex-1 flex-row items-center justify-center gap-2 rounded-xl bg-brand active:opacity-85"
-        >
-          <Edit2 size={15} color="#ffffff" strokeWidth={2.2} />
-          <Text className="text-sm font-bold text-white">Edit Order</Text>
-        </Pressable>
-
-        {order.order_status !== "Cancelled" && (
+      <View className="mt-2 gap-2.5">
+        {/* Record Payment — only when there's an outstanding balance */}
+        {remainingAmount > 0 && order.order_status !== "Cancelled" && (
           <Pressable
-            onPress={() => onCancel(order)}
-            disabled={isCancelling}
-            className="h-12 flex-1 flex-row items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 active:opacity-75"
+            onPress={() => onRecordPayment(order)}
+            className="h-12 flex-row items-center justify-center gap-2 rounded-xl bg-brand shadow-sm active:opacity-85"
           >
-            {isCancelling ? (
-              <ActivityIndicator size="small" color="#e8452c" />
-            ) : (
-              <>
-                <XCircle size={15} color="#e8452c" strokeWidth={2.2} />
-                <Text className="text-sm font-bold text-brand">
-                  Cancel Order
-                </Text>
-              </>
-            )}
+            <PlusCircle size={16} color="#ffffff" strokeWidth={2.2} />
+            <Text className="text-sm font-bold text-white">
+              Record Payment
+            </Text>
           </Pressable>
         )}
+
+        {/* Edit + Cancel row */}
+        <View className="flex-row items-center gap-2.5">
+          <Pressable
+            onPress={() => onEdit(order)}
+            className="h-12 flex-1 flex-row items-center justify-center gap-2 rounded-xl border border-border bg-surface active:opacity-80"
+          >
+            <Edit2 size={15} color="#241a12" strokeWidth={2.2} />
+            <Text className="text-sm font-bold text-ink">Edit Order</Text>
+          </Pressable>
+
+          {order.order_status !== "Cancelled" && (
+            <Pressable
+              onPress={() => onCancel(order)}
+              disabled={isCancelling}
+              className="h-12 flex-1 flex-row items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 active:opacity-75"
+            >
+              {isCancelling ? (
+                <ActivityIndicator size="small" color="#e8452c" />
+              ) : (
+                <>
+                  <XCircle size={15} color="#e8452c" strokeWidth={2.2} />
+                  <Text className="text-sm font-bold text-brand">
+                    Cancel Order
+                  </Text>
+                </>
+              )}
+            </Pressable>
+          )}
+        </View>
       </View>
     </View>
   );

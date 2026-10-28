@@ -22,6 +22,7 @@ import {
   Package,
   Pencil,
   Phone,
+  PlusCircle,
   Receipt,
   ShoppingBag,
   Store,
@@ -34,6 +35,7 @@ import {
 } from "@/hooks/useCustomerQueries";
 import { useCustomerOrdersQuery } from "@/hooks/useOfflineOrderQueries";
 import { CustomerFormModal } from "@/components/customers/CustomerFormModal";
+import { RecordPaymentModal } from "@/components/payments/RecordPaymentModal";
 import { useAuth } from "@/context/AuthContext";
 import type { OfflineCustomer } from "@/types/customer";
 
@@ -43,6 +45,7 @@ export default function CustomerDetailScreen() {
   const { isAuthenticated, isLoading: isAuthLoading } = useAuth();
 
   const [editModalVisible, setEditModalVisible] = useState(false);
+  const [paymentModalVisible, setPaymentModalVisible] = useState(false);
 
   const customerId = id ? String(id) : "";
 
@@ -465,26 +468,39 @@ export default function CustomerDetailScreen() {
           </View>
 
           {/* Action Buttons */}
-          <View className="mt-2 flex-row gap-3">
-            {Boolean(customer.phone_number) && (
+          <View className="mt-2 gap-2.5">
+            {/* Record Payment — only when customer has outstanding balance */}
+            {totalRemaining > 0 && (
               <Pressable
-                onPress={() => handleCall(customer.phone_number)}
-                className="flex-1 flex-row items-center justify-center gap-2 rounded-xl bg-brand py-3.5 shadow-sm active:opacity-85"
+                onPress={() => setPaymentModalVisible(true)}
+                className="h-12 flex-row items-center justify-center gap-2 rounded-xl bg-brand shadow-sm active:opacity-85"
               >
-                <Phone size={16} color="#ffffff" strokeWidth={2.2} />
+                <PlusCircle size={16} color="#ffffff" strokeWidth={2.2} />
                 <Text className="text-sm font-bold text-white">
-                  Call Customer
+                  Record Payment
                 </Text>
               </Pressable>
             )}
 
-            <Pressable
-              onPress={() => setEditModalVisible(true)}
-              className="flex-1 flex-row items-center justify-center gap-2 rounded-xl border border-border bg-surface py-3.5 active:opacity-75"
-            >
-              <Pencil size={15} color="#241a12" strokeWidth={2} />
-              <Text className="text-sm font-bold text-ink">Edit Store</Text>
-            </Pressable>
+            <View className="flex-row gap-3">
+              {Boolean(customer.phone_number) && (
+                <Pressable
+                  onPress={() => handleCall(customer.phone_number)}
+                  className="flex-1 flex-row items-center justify-center gap-2 rounded-xl border border-border bg-surface py-3 active:opacity-75"
+                >
+                  <Phone size={15} color="#241a12" strokeWidth={2.2} />
+                  <Text className="text-sm font-bold text-ink">Call</Text>
+                </Pressable>
+              )}
+
+              <Pressable
+                onPress={() => setEditModalVisible(true)}
+                className="flex-1 flex-row items-center justify-center gap-2 rounded-xl border border-border bg-surface py-3 active:opacity-75"
+              >
+                <Pencil size={15} color="#241a12" strokeWidth={2} />
+                <Text className="text-sm font-bold text-ink">Edit Store</Text>
+              </Pressable>
+            </View>
           </View>
         </ScrollView>
       )}
@@ -495,6 +511,23 @@ export default function CustomerDetailScreen() {
           visible={editModalVisible}
           editingCustomer={customer as OfflineCustomer}
           onClose={() => setEditModalVisible(false)}
+        />
+      )}
+
+      {/* Record Payment Modal */}
+      {customer && (
+        <RecordPaymentModal
+          visible={paymentModalVisible}
+          onClose={() => setPaymentModalVisible(false)}
+          customerId={Number(customer.id)}
+          remainingAmount={totalRemaining}
+          customerOrders={customerOrders
+            .filter((o) => Number(o.remaining_amount ?? 0) > 0)
+            .map((o) => ({
+              id: o.id!,
+              order_code: o.order_code,
+              remaining_amount: o.remaining_amount ?? "0",
+            }))}
         />
       )}
     </SafeAreaView>

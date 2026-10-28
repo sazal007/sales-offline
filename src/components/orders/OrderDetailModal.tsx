@@ -1,6 +1,6 @@
 // src/components/orders/OrderDetailModal.tsx
 
-import React from "react";
+import React, { useState } from "react";
 import {
   Modal,
   KeyboardAvoidingView,
@@ -20,6 +20,7 @@ import type {
 import { useOfflineOrderDetailQuery } from "@/hooks/useOfflineOrderQueries";
 import { OrderDetailView } from "./OrderDetailView";
 import { OrderEditView } from "./OrderEditView";
+import { RecordPaymentModal } from "@/components/payments/RecordPaymentModal";
 
 interface OrderDetailModalProps {
   visible: boolean;
@@ -48,6 +49,8 @@ export function OrderDetailModal({
   isCancelling = false,
   products,
 }: OrderDetailModalProps) {
+  const [paymentModalVisible, setPaymentModalVisible] = useState(false);
+
   // Query fresh detail when modal is visible
   const { data: detailData, isLoading: isLoadingDetail } =
     useOfflineOrderDetailQuery(
@@ -143,12 +146,23 @@ export function OrderDetailModal({
                 order={activeOrder}
                 onEdit={onStartEdit}
                 onCancel={onCancelOrder}
+                onRecordPayment={() => setPaymentModalVisible(true)}
                 isCancelling={isCancelling}
               />
             )}
           </ScrollView>
         </View>
       </KeyboardAvoidingView>
+
+      {/* Record Payment bottom-sheet */}
+      <RecordPaymentModal
+        visible={paymentModalVisible}
+        onClose={() => setPaymentModalVisible(false)}
+        orderId={activeOrder.id}
+        orderCode={activeOrder.order_code}
+        remainingAmount={activeOrder.remaining_amount}
+        customerId={typeof activeOrder.customer === "number" ? activeOrder.customer : undefined}
+      />
     </Modal>
   );
 }
