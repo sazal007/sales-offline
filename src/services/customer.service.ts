@@ -4,6 +4,7 @@ import apiClient from "@/lib/api-client";
 import * as SecureStore from "expo-secure-store";
 import type {
   OfflineCustomer,
+  OfflineCustomerDetail,
   CreateCustomerPayload,
   UpdateCustomerPayload,
   PaginatedCustomersResponse,
@@ -38,6 +39,21 @@ export async function getCustomers(search?: string): Promise<OfflineCustomer[]> 
   }
 
   return [];
+}
+
+/**
+ * Fetch a single offline customer details by ID.
+ * Endpoint: /api/offline-sales/customers/{id}/
+ */
+export async function getCustomerDetail(
+  id: number | string,
+): Promise<OfflineCustomerDetail> {
+  const headers = await getAuthHeader();
+  const response = await apiClient.get<OfflineCustomerDetail>(
+    `${CUSTOMERS_ENDPOINT}${id}/`,
+    { headers },
+  );
+  return response.data;
 }
 
 /**

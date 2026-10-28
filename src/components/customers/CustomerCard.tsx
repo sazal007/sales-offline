@@ -2,11 +2,20 @@
 
 import React from "react";
 import { View, Text, Pressable } from "react-native";
-import { Store, Pencil, Trash2, User, Phone, MapPin } from "lucide-react-native";
+import {
+  Store,
+  Pencil,
+  Trash2,
+  User,
+  Phone,
+  MapPin,
+  ChevronRight,
+} from "lucide-react-native";
 import type { OfflineCustomer } from "@/types/customer";
 
-interface CustomerCardProps {
+export interface CustomerCardProps {
   customer: OfflineCustomer;
+  onPress?: (customer: OfflineCustomer) => void;
   onEdit: (customer: OfflineCustomer) => void;
   onDelete: (customer: OfflineCustomer) => void;
   onCall: (phoneNumber: string) => void;
@@ -14,12 +23,16 @@ interface CustomerCardProps {
 
 export function CustomerCard({
   customer,
+  onPress,
   onEdit,
   onDelete,
   onCall,
 }: CustomerCardProps) {
   return (
-    <View className="rounded-2xl border border-border bg-surface p-4 shadow-sm">
+    <Pressable
+      onPress={() => onPress?.(customer)}
+      className="rounded-2xl border border-border bg-surface p-4 shadow-sm active:opacity-90"
+    >
       {/* Card Header: Store Name + Edit/Delete actions */}
       <View className="flex-row items-start justify-between">
         <View className="flex-1 flex-row items-center gap-2.5 pr-2">
@@ -27,9 +40,15 @@ export function CustomerCard({
             <Store size={18} color="#e8452c" />
           </View>
           <View className="flex-1">
-            <Text numberOfLines={1} className="text-base font-bold text-ink">
-              {customer.store_name}
-            </Text>
+            <View className="flex-row items-center gap-1">
+              <Text
+                numberOfLines={1}
+                className="flex-1 text-base font-bold text-ink"
+              >
+                {customer.store_name}
+              </Text>
+              <ChevronRight size={15} color="#79726b" />
+            </View>
           </View>
         </View>
 
@@ -95,6 +114,6 @@ export function CustomerCard({
           </Text>
         </View>
       </View>
-    </View>
+    </Pressable>
   );
 }

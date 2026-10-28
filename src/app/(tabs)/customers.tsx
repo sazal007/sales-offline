@@ -13,6 +13,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useRouter } from "expo-router";
 import { AlertCircle, Plus, Search, Store, X } from "lucide-react-native";
 import {
   useCustomersQuery,
@@ -23,6 +24,7 @@ import { CustomerCard } from "@/components/customers/CustomerCard";
 import { CustomerFormModal } from "@/components/customers/CustomerFormModal";
 
 export default function CustomersScreen() {
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [modalVisible, setModalVisible] = useState(false);
   const [editingCustomer, setEditingCustomer] =
@@ -98,6 +100,13 @@ export default function CustomersScreen() {
     Linking.openURL(`tel:${phone}`).catch(() => {
       Alert.alert("Error", "Unable to open phone dialer");
     });
+  };
+
+  const handleCustomerPress = (customer: OfflineCustomer) => {
+    router.push({
+      pathname: "/customers/[id]",
+      params: { id: String(customer.id) },
+    } as any);
   };
 
   return (
@@ -212,6 +221,7 @@ export default function CustomersScreen() {
           renderItem={({ item }) => (
             <CustomerCard
               customer={item}
+              onPress={handleCustomerPress}
               onEdit={handleOpenEditModal}
               onDelete={handleDeleteCustomer}
               onCall={handleCallCustomer}

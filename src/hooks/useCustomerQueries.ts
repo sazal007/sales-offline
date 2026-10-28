@@ -3,6 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   getCustomers,
+  getCustomerDetail,
   createCustomer,
   updateCustomer,
   deleteCustomer,
@@ -13,6 +14,21 @@ import type {
 } from "@/types/customer";
 
 export const CUSTOMERS_QUERY_KEY = ["customers"] as const;
+export const CUSTOMER_DETAIL_QUERY_KEY = ["customer-detail"] as const;
+
+/**
+ * Fetch a single customer detail by ID.
+ */
+export function useCustomerDetailQuery(id: number | string | undefined | null) {
+  return useQuery({
+    queryKey: [...CUSTOMER_DETAIL_QUERY_KEY, id ? String(id) : null],
+    queryFn: () => {
+      if (!id) throw new Error("Customer ID is required");
+      return getCustomerDetail(id);
+    },
+    enabled: Boolean(id),
+  });
+}
 
 /**
  * Fetch all customers, optionally filtered by server-side search query (?search=).
@@ -55,8 +71,11 @@ export function useUpdateCustomerMutation() {
       id: number | string;
       payload: UpdateCustomerPayload;
     }) => updateCustomer(id, payload),
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: CUSTOMERS_QUERY_KEY });
+      queryClient.invalidateQueries({
+        queryKey: [...CUSTOMER_DETAIL_QUERY_KEY, String(variables.id)],
+      });
     },
   });
 }
@@ -69,8 +88,11 @@ export function useDeleteCustomerMutation() {
 
   return useMutation({
     mutationFn: (id: number | string) => deleteCustomer(id),
-    onSuccess: () => {
+    onSuccess: (_, id) => {
       queryClient.invalidateQueries({ queryKey: CUSTOMERS_QUERY_KEY });
+      queryClient.invalidateQueries({
+        queryKey: [...CUSTOMER_DETAIL_QUERY_KEY, String(id)],
+      });
     },
   });
 }
