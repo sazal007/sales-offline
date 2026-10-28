@@ -15,6 +15,7 @@ import { X, Edit2 } from "lucide-react-native";
 import type {
   OfflineOrderDetailResponse,
   UpdateOfflineOrderPayload,
+  Product,
 } from "@/types/offlineSales";
 import { useOfflineOrderDetailQuery } from "@/hooks/useOfflineOrderQueries";
 import { OrderDetailView } from "./OrderDetailView";
@@ -31,6 +32,7 @@ interface OrderDetailModalProps {
   onCancelOrder: (order: OfflineOrderDetailResponse) => void;
   isSaving?: boolean;
   isCancelling?: boolean;
+  products?: Product[];
 }
 
 export function OrderDetailModal({
@@ -44,6 +46,7 @@ export function OrderDetailModal({
   onCancelOrder,
   isSaving = false,
   isCancelling = false,
+  products,
 }: OrderDetailModalProps) {
   // Query fresh detail when modal is visible
   const { data: detailData, isLoading: isLoadingDetail } =
@@ -126,6 +129,7 @@ export function OrderDetailModal({
                 onSave={onSaveEdit}
                 onCancel={onCancelEdit}
                 isSaving={isSaving}
+                products={products}
               />
             ) : isLoadingDetail && (!activeOrder.items || activeOrder.items.length === 0) ? (
               <View className="items-center justify-center py-12">

@@ -37,6 +37,7 @@ export interface UpdateOfflineOrderPayload {
   payment_screenshot?: any;
   remarks?: string;
   order_date?: string;
+  items?: CreateOrderItemInput[];
 }
 
 export interface OfflineOrderItemResponse {

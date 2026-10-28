@@ -145,6 +145,12 @@ export async function updateOfflineOrder(
     if (payload.remarks !== undefined) {
       formData.append("remarks", payload.remarks || "");
     }
+    if (payload.items && payload.items.length > 0) {
+      payload.items.forEach((item, i) => {
+        formData.append(`items[${i}]inventory_id`, String(item.inventory_id));
+        formData.append(`items[${i}]quantity`, String(item.quantity));
+      });
+    }
     formData.append("payment_screenshot", {
       uri: payload.payment_screenshot.uri,
       name: payload.payment_screenshot.name || "receipt.jpg",

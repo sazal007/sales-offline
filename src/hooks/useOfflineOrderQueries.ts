@@ -80,6 +80,8 @@ export function useUpdateOfflineOrderMutation() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: OFFLINE_ORDERS_KEY });
       queryClient.invalidateQueries({ queryKey: ["customers"] });
+      queryClient.invalidateQueries({ queryKey: PRODUCTS_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: FRANCHISE_INVENTORY_KEY });
       if (data?.order_code) {
         queryClient.invalidateQueries({
           queryKey: [...OFFLINE_ORDERS_KEY, data.order_code],

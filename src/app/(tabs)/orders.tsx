@@ -306,6 +306,7 @@ export default function OrdersScreen() {
         onCancelOrder={handleCancelOrder}
         isSaving={updateMutation.isPending}
         isCancelling={cancelMutation.isPending}
+        products={products}
       />
 
       {/* Create Order Modal */}

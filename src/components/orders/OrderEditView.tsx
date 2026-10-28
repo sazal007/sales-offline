@@ -9,6 +9,7 @@ import {
   Platform,
   Alert,
   ActivityIndicator,
+  ScrollView,
 } from "react-native";
 import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
@@ -20,19 +21,30 @@ import {
   ImageIcon,
   Camera,
   AlertCircle,
+  Package,
+  Plus,
+  Trash2,
+  Minus,
+  Search,
+  X,
+  ChevronDown,
+  RefreshCw,
 } from "lucide-react-native";
 import type {
   OfflineOrderDetailResponse,
   OfflinePaymentMethod,
   UpdateOfflineOrderPayload,
+  Product,
 } from "@/types/offlineSales";
-import { PAYMENT_METHODS } from "./orderHelpers";
+import { useProductsQuery } from "@/hooks/useOfflineOrderQueries";
+import { PAYMENT_METHODS, type SelectedOrderItem } from "./orderHelpers";
 
 interface OrderEditViewProps {
   order: OfflineOrderDetailResponse;
   onSave: (payload: UpdateOfflineOrderPayload) => Promise<void>;
   onCancel: () => void;
   isSaving?: boolean;
+  products?: Product[];
 }
 
 export function OrderEditView({
@@ -40,7 +52,18 @@ export function OrderEditView({
   onSave,
   onCancel,
   isSaving = false,
+  products: initialProducts,
 }: OrderEditViewProps) {
+  // Use cached products or passed in products
+  const { data: fetchedProducts = [] } = useProductsQuery();
+  const products = initialProducts || fetchedProducts;
+
+  const [items, setItems] = useState<SelectedOrderItem[]>([]);
+  const [openProductDropdownIndex, setOpenProductDropdownIndex] = useState<
+    number | null
+  >(null);
+  const [productSearch, setProductSearch] = useState("");
+
   const [totalAmount, setTotalAmount] = useState("");
   const [paidAmount, setPaidAmount] = useState("");
   const [paymentMethod, setPaymentMethod] =
@@ -57,6 +80,7 @@ export function OrderEditView({
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [apiError, setApiError] = useState<string | null>(null);
 
+  // Initialize form state when order or products change
   useEffect(() => {
     setTotalAmount(String(order.total_amount || ""));
     setPaidAmount(String(order.paid_amount || "0"));
@@ -83,16 +107,137 @@ export function OrderEditView({
       setDateObject(new Date());
     }
 
+    // Populate order items from order.items
+    if (order.items && order.items.length > 0) {
+      const initialItems: SelectedOrderItem[] = order.items.map((it) => {
+        const matched = products.find(
+          (p) =>
+            (p.inventory_id ?? p.product_id) === it.inventory ||
+            p.product_name === it.product_name,
+        );
+        return {
+          inventory_id: it.inventory,
+          quantity: it.quantity,
+          product: matched || {
+            id: it.product_id,
+            inventory_id: it.inventory,
+            product_id: it.product_id,
+            product_name: it.product_name,
+            description: "",
+            quantity: it.quantity,
+            total_amount: 0,
+            paid_amount: 0,
+            remaining_amount: 0,
+            created_at: "",
+          },
+        };
+      });
+      setItems(initialItems);
+    } else {
+      setItems([{ inventory_id: 0, quantity: 1 }]);
+    }
+
     setPaymentScreenshot(null);
     setFormErrors({});
     setApiError(null);
-  }, [order]);
+  }, [order, products]);
+
+  // Filtered products list for dropdown
+  const filteredProducts = useMemo(() => {
+    if (!productSearch.trim()) return products;
+    const q = productSearch.toLowerCase().trim();
+    return products.filter(
+      (p) =>
+        p.product_name?.toLowerCase().includes(q) ||
+        String(p.inventory_id).includes(q) ||
+        String(p.product_id).includes(q) ||
+        p.description?.toLowerCase().includes(q),
+    );
+  }, [products, productSearch]);
+
+  // Sum of items price * quantity
+  const calculatedItemsTotal = useMemo(() => {
+    return items.reduce((acc, it) => {
+      const price = it.product?.total_amount || 0;
+      return acc + price * (it.quantity || 1);
+    }, 0);
+  }, [items]);
 
   const calculatedRemaining = useMemo(() => {
     const tot = parseFloat(totalAmount) || 0;
     const paid = parseFloat(paidAmount) || 0;
     return Math.max(0, tot - paid);
   }, [totalAmount, paidAmount]);
+
+  // Inventory Item Handlers
+  const handleAddItem = () => {
+    const unusedProduct =
+      products.find(
+        (p) =>
+          !items.some(
+            (it) => it.inventory_id === (p.inventory_id ?? p.product_id),
+          ),
+      ) || products[0];
+
+    const invId = unusedProduct
+      ? (unusedProduct.inventory_id ?? unusedProduct.product_id)
+      : 0;
+
+    setItems((prev) => [
+      ...prev,
+      {
+        inventory_id: invId,
+        quantity: 1,
+        product: unusedProduct,
+      },
+    ]);
+  };
+
+  const handleRemoveItem = (index: number) => {
+    if (items.length <= 1) return;
+    setItems((prev) => prev.filter((_, i) => i !== index));
+    if (openProductDropdownIndex === index) {
+      setOpenProductDropdownIndex(null);
+    }
+  };
+
+  const handleUpdateQuantity = (index: number, newQty: number) => {
+    const qty = Math.max(1, newQty);
+    setItems((prev) => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], quantity: qty };
+      return updated;
+    });
+  };
+
+  const handleSelectProduct = (index: number, product: Product) => {
+    const invId = product.inventory_id ?? product.product_id;
+    setItems((prev) => {
+      const updated = [...prev];
+      const currentQty = updated[index]?.quantity || 1;
+      updated[index] = {
+        inventory_id: invId,
+        quantity: currentQty,
+        product,
+      };
+      return updated;
+    });
+    setOpenProductDropdownIndex(null);
+    setProductSearch("");
+  };
+
+  const handleApplyItemsTotal = () => {
+    if (calculatedItemsTotal > 0) {
+      setTotalAmount(String(calculatedItemsTotal));
+      if (formErrors.total_amount) {
+        setFormErrors((prev) => {
+          const n = { ...prev };
+          delete n.total_amount;
+          return n;
+        });
+      }
+    }
+  };
 
   const handlePickImage = async () => {
     try {
@@ -163,6 +308,17 @@ export function OrderEditView({
   const validateForm = () => {
     const errors: Record<string, string> = {};
 
+    if (items.length === 0) {
+      errors.items = "At least one order item is required";
+    } else {
+      const invalid = items.some(
+        (it) => !it.inventory_id || it.inventory_id <= 0 || it.quantity <= 0,
+      );
+      if (invalid) {
+        errors.items = "Please select a product and valid quantity for each item";
+      }
+    }
+
     if (!totalAmount || parseFloat(totalAmount) <= 0) {
       errors.total_amount = "Valid total amount is required";
     }
@@ -198,12 +354,20 @@ export function OrderEditView({
     if (!validateForm()) return;
     setApiError(null);
 
+    const validItems = items
+      .filter((it) => it.inventory_id > 0 && it.quantity > 0)
+      .map((it) => ({
+        inventory_id: it.inventory_id,
+        quantity: it.quantity,
+      }));
+
     const payload: UpdateOfflineOrderPayload = {
       total_amount: totalAmount.trim(),
       paid_amount: paidAmount.trim() || "0.00",
       payment_method: paymentMethod,
       order_date: orderDate,
       remarks: remarks.trim(),
+      items: validItems,
       ...(paymentScreenshot ? { payment_screenshot: paymentScreenshot } : {}),
     };
 
@@ -227,7 +391,252 @@ export function OrderEditView({
         </View>
       )}
 
-      {/* 1. Order Date */}
+      {/* 1. Order Items (Inventory Selection & Quantity) */}
+      <View className="mb-4">
+        <View className="mb-2 flex-row items-center justify-between">
+          <Text className="text-xs font-semibold uppercase tracking-wider text-ink-soft">
+            Order Items ({items.length})
+          </Text>
+          <Pressable
+            onPress={handleAddItem}
+            className="flex-row items-center gap-1 rounded-lg bg-brand/10 px-2.5 py-1 active:opacity-75"
+          >
+            <Plus size={12} color="#e8452c" />
+            <Text className="text-xs font-bold text-brand">Add Item</Text>
+          </Pressable>
+        </View>
+
+        {formErrors.items && (
+          <Text className="mb-2 text-xs font-medium text-red-500">
+            {formErrors.items}
+          </Text>
+        )}
+
+        {items.map((it, idx) => {
+          const isDropdownOpen = openProductDropdownIndex === idx;
+
+          return (
+            <View
+              key={idx}
+              className="mb-2.5 rounded-2xl border border-border bg-surface p-3.5 shadow-sm"
+            >
+              {/* Item Header */}
+              <View className="flex-row items-center justify-between pb-1.5">
+                <Text className="text-[11px] font-bold uppercase text-ink-soft">
+                  Item #{idx + 1}
+                </Text>
+                {items.length > 1 && (
+                  <Pressable
+                    onPress={() => handleRemoveItem(idx)}
+                    className="h-6 w-6 items-center justify-center rounded-lg bg-red-50 active:opacity-70"
+                    hitSlop={8}
+                  >
+                    <Trash2 size={12} color="#e8452c" />
+                  </Pressable>
+                )}
+              </View>
+
+              {/* Product Selection Trigger */}
+              <Pressable
+                onPress={() => {
+                  setProductSearch("");
+                  setOpenProductDropdownIndex(isDropdownOpen ? null : idx);
+                }}
+                className="mt-1 flex-row items-center justify-between rounded-xl border border-border bg-background p-2.5 active:bg-surface-soft"
+              >
+                <View className="flex-1 pr-2">
+                  <View className="flex-row items-center gap-2">
+                    <Package size={15} color="#e8452c" />
+                    <Text
+                      numberOfLines={1}
+                      className={`text-xs ${
+                        it.product
+                          ? "font-bold text-ink"
+                          : "font-medium text-ink-soft"
+                      }`}
+                    >
+                      {it.product?.product_name || "Tap to select product..."}
+                    </Text>
+
+                    {it.product && it.product.quantity !== undefined ? (
+                      <View className="rounded bg-emerald-50 px-1.5 py-0.5 border border-emerald-200">
+                        <Text className="text-[9px] font-bold text-emerald-700">
+                          Stock: {it.product.quantity}
+                        </Text>
+                      </View>
+                    ) : null}
+                  </View>
+
+                  {it.product && (
+                    <View className="mt-1.5 flex-row items-center gap-2">
+                      <View className="rounded bg-border/40 px-1.5 py-0.5">
+                        <Text className="text-[10px] font-bold text-ink-soft">
+                          Inventory ID:{" "}
+                          {it.product.inventory_id ?? it.product.product_id}
+                        </Text>
+                      </View>
+                      {Boolean(
+                        it.product.total_amount && it.product.total_amount > 0,
+                      ) && (
+                        <Text className="text-xs font-semibold text-brand">
+                          Rs. {Number(it.product.total_amount).toLocaleString()}
+                        </Text>
+                      )}
+                    </View>
+                  )}
+                </View>
+
+                <ChevronDown
+                  size={15}
+                  color="#79726b"
+                  style={{
+                    transform: [{ rotate: isDropdownOpen ? "180deg" : "0deg" }],
+                  }}
+                />
+              </Pressable>
+
+              {/* Product Search & Dropdown Picker */}
+              {isDropdownOpen && (
+                <View className="mt-2 rounded-xl border border-border bg-background p-2 shadow-lg">
+                  <View className="mb-2 flex-row items-center rounded-lg border border-border bg-surface px-2.5 py-1.5">
+                    <Search size={14} color="#79726b" />
+                    <TextInput
+                      value={productSearch}
+                      onChangeText={setProductSearch}
+                      placeholder="Filter by product name or ID..."
+                      placeholderTextColor="#79726b"
+                      className="ml-2 flex-1 text-xs text-ink p-0"
+                      autoFocus
+                    />
+                    {productSearch.length > 0 && (
+                      <Pressable
+                        onPress={() => setProductSearch("")}
+                        hitSlop={8}
+                      >
+                        <X size={13} color="#79726b" />
+                      </Pressable>
+                    )}
+                  </View>
+
+                  <ScrollView
+                    nestedScrollEnabled
+                    className="max-h-48"
+                    showsVerticalScrollIndicator={true}
+                  >
+                    {filteredProducts.length === 0 ? (
+                      <View className="py-4 items-center">
+                        <Text className="text-xs text-ink-soft">
+                          No matching products found
+                        </Text>
+                      </View>
+                    ) : (
+                      filteredProducts.map((p) => {
+                        const isChosen =
+                          it.inventory_id ===
+                          (p.inventory_id ?? p.product_id);
+                        return (
+                          <Pressable
+                            key={p.inventory_id ?? p.product_id}
+                            onPress={() => handleSelectProduct(idx, p)}
+                            className={`flex-row items-center justify-between rounded-lg p-2.5 mb-1 ${
+                              isChosen ? "bg-brand/10" : "active:bg-surface"
+                            }`}
+                          >
+                            <View className="flex-1 pr-2">
+                              <Text
+                                className={`text-xs ${
+                                  isChosen
+                                    ? "font-bold text-brand"
+                                    : "font-semibold text-ink"
+                                }`}
+                                numberOfLines={1}
+                              >
+                                {p.product_name}
+                              </Text>
+                              <Text className="text-[10px] text-ink-soft">
+                                ID: {p.inventory_id ?? p.product_id} • Stock:{" "}
+                                {p.quantity}
+                              </Text>
+                            </View>
+                            {Boolean(p.total_amount) && (
+                              <Text className="text-xs font-bold text-ink">
+                                Rs. {Number(p.total_amount).toLocaleString()}
+                              </Text>
+                            )}
+                          </Pressable>
+                        );
+                      })
+                    )}
+                  </ScrollView>
+                </View>
+              )}
+
+              {/* Quantity Stepper */}
+              <View className="mt-3 flex-row items-center justify-between border-t border-border/60 pt-2.5">
+                <Text className="text-xs font-semibold text-ink-soft">
+                  Quantity
+                </Text>
+                <View className="flex-row items-center rounded-xl border border-border bg-background">
+                  <Pressable
+                    onPress={() =>
+                      handleUpdateQuantity(idx, it.quantity - 1)
+                    }
+                    className="h-8 w-8 items-center justify-center active:bg-surface-soft"
+                    hitSlop={4}
+                  >
+                    <Minus size={13} color="#79726b" />
+                  </Pressable>
+                  <TextInput
+                    value={String(it.quantity || "")}
+                    onChangeText={(val) => {
+                      const n = parseInt(val, 10);
+                      handleUpdateQuantity(idx, isNaN(n) ? 1 : n);
+                    }}
+                    keyboardType="numeric"
+                    className="h-8 min-w-[40px] text-center text-xs font-bold text-ink"
+                  />
+                  <Pressable
+                    onPress={() =>
+                      handleUpdateQuantity(idx, it.quantity + 1)
+                    }
+                    className="h-8 w-8 items-center justify-center active:bg-surface-soft"
+                    hitSlop={4}
+                  >
+                    <Plus size={13} color="#79726b" />
+                  </Pressable>
+                </View>
+              </View>
+            </View>
+          );
+        })}
+
+        {/* Calculated Items Total Pill & Quick Apply */}
+        {calculatedItemsTotal > 0 && (
+          <View className="mt-1 flex-row items-center justify-between rounded-xl border border-border bg-surface p-2.5">
+            <View>
+              <Text className="text-[10px] font-medium text-ink-soft">
+                Calculated Items Value
+              </Text>
+              <Text className="text-xs font-bold text-ink">
+                Rs. {calculatedItemsTotal.toLocaleString()}
+              </Text>
+            </View>
+            {parseFloat(totalAmount) !== calculatedItemsTotal && (
+              <Pressable
+                onPress={handleApplyItemsTotal}
+                className="flex-row items-center gap-1 rounded-lg bg-brand/10 px-2.5 py-1 active:opacity-75"
+              >
+                <RefreshCw size={11} color="#e8452c" />
+                <Text className="text-xs font-bold text-brand">
+                  Apply to Total
+                </Text>
+              </Pressable>
+            )}
+          </View>
+        )}
+      </View>
+
+      {/* 2. Order Date */}
       <View className="mb-4">
         <Text className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-ink-soft">
           Order Date
@@ -280,7 +689,7 @@ export function OrderEditView({
         )}
       </View>
 
-      {/* 2. Total Amount */}
+      {/* 3. Total Amount */}
       <View className="mb-4">
         <Text className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-ink-soft">
           Total Order Amount (Rs.) *
@@ -316,7 +725,7 @@ export function OrderEditView({
         )}
       </View>
 
-      {/* 3. Paid Amount & Payment Method */}
+      {/* 4. Paid Amount */}
       <View className="mb-4">
         <Text className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-ink-soft">
           Paid Amount (Rs.)
@@ -366,7 +775,7 @@ export function OrderEditView({
         </View>
       </View>
 
-      {/* 4. Payment Method */}
+      {/* 5. Payment Method */}
       <View className="mb-4">
         <Text className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-ink-soft">
           Payment Method
@@ -397,7 +806,7 @@ export function OrderEditView({
         </View>
       </View>
 
-      {/* 5. Payment Screenshot (if non-cash & paid > 0) */}
+      {/* 6. Payment Screenshot (if non-cash & paid > 0) */}
       {paymentMethod !== "cash" && parseFloat(paidAmount) > 0 && (
         <View className="mb-4">
           <Text className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-ink-soft">
@@ -466,7 +875,7 @@ export function OrderEditView({
         </View>
       )}
 
-      {/* 6. Remarks */}
+      {/* 7. Remarks */}
       <View className="mb-6">
         <Text className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-ink-soft">
           Remarks / Credit Terms
