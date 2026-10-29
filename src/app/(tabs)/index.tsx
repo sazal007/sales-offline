@@ -3,7 +3,9 @@
 import { useAuth } from "@/context/AuthContext";
 import { useOfflineSalesStatsQuery } from "@/hooks/useOfflineOrderQueries";
 import { DutyStatusToggle } from "@/components/tracking/DutyStatusToggle";
+import { DailyAttendanceCard } from "@/components/attendance/DailyAttendanceCard";
 import type { UserRole } from "@/types/auth";
+import { useQueryClient } from "@tanstack/react-query";
 import { router } from "expo-router";
 import {
   AlertCircle,
@@ -43,6 +45,7 @@ function formatCurrency(value: string | number) {
 
 export default function HomeScreen() {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const {
     data: stats,
     isLoading,
@@ -71,6 +74,7 @@ export default function HomeScreen() {
             refreshing={isRefetching}
             onRefresh={() => {
               refetch();
+              queryClient.invalidateQueries({ queryKey: ["attendance"] });
             }}
             tintColor="#e8452c"
             colors={["#e8452c"]}
@@ -96,6 +100,9 @@ export default function HomeScreen() {
             </View>
           )}
         </View>
+
+        {/* Daily Attendance Card (Salesperson role) */}
+        <DailyAttendanceCard userRole={user?.role} />
 
         {/* Stats content */}
         {isLoading ? (
