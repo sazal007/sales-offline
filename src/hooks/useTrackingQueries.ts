@@ -98,8 +98,8 @@ export function useMyTrackingQuery(enabled = true) {
     queryKey: MY_TRACKING_KEY,
     queryFn: getMyTrackingStatus,
     enabled,
-    refetchInterval: 20000, // Refresh GET status every 20s
-    refetchOnWindowFocus: true,
+    refetchInterval: (query) => (query.state.data?.is_online ? 20000 : false),
+    refetchOnWindowFocus: (query) => Boolean(query.state.data?.is_online),
   });
 
   const isOnline = Boolean(query.data?.is_online);
