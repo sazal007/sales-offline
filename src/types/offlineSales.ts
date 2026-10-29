@@ -136,6 +136,7 @@ export interface RecordOfflinePaymentPayload {
   order_code?: string;
   amount: string;
   payment_method: OfflinePaymentMethod;
+  payment_screenshot?: any;
   remarks?: string;
 }
 

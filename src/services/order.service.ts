@@ -44,6 +44,44 @@ export async function recordOfflinePayment(
   payload: RecordOfflinePaymentPayload,
 ): Promise<OfflinePaymentResponse> {
   const headers = await getAuthHeader();
+
+  if (payload.payment_screenshot) {
+    const formData = new FormData();
+    if (payload.customer !== undefined) {
+      formData.append("customer", String(payload.customer));
+    }
+    if (payload.order !== undefined) {
+      formData.append("order", String(payload.order));
+    }
+    if (payload.order_code !== undefined) {
+      formData.append("order_code", payload.order_code);
+    }
+    formData.append("amount", String(payload.amount));
+    formData.append("payment_method", payload.payment_method);
+    if (payload.remarks) {
+      formData.append("remarks", payload.remarks);
+    }
+
+    formData.append("payment_screenshot", {
+      uri: payload.payment_screenshot.uri,
+      name: payload.payment_screenshot.name || "receipt.jpg",
+      type: payload.payment_screenshot.type || "image/jpeg",
+    } as any);
+
+    const response = await apiClient.post<OfflinePaymentResponse>(
+      PAYMENTS_ENDPOINT,
+      formData,
+      {
+        headers: {
+          ...headers,
+          "Content-Type": undefined as any,
+        },
+        transformRequest: (data: any) => data,
+      },
+    );
+    return response.data;
+  }
+
   const response = await apiClient.post<OfflinePaymentResponse>(
     PAYMENTS_ENDPOINT,
     payload,

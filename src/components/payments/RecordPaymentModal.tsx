@@ -15,13 +15,20 @@ import {
 } from "react-native";
 import {
   Banknote,
+  Camera,
   CheckCircle2,
   ChevronDown,
   CreditCard,
+  DollarSign,
+  ImageIcon,
   Landmark,
   QrCode,
+  RefreshCw,
+  Trash2,
   X,
 } from "lucide-react-native";
+import { Image } from "expo-image";
+import * as ImagePicker from "expo-image-picker";
 import { useRecordOfflinePaymentMutation } from "@/hooks/useOfflineOrderQueries";
 import type { OfflinePaymentMethod } from "@/types/offlineSales";
 
@@ -73,6 +80,12 @@ export function RecordPaymentModal({
   const [remarks, setRemarks] = useState("");
   const [selectedOrder, setSelectedOrder] = useState<OrderOption | null>(null);
   const [showOrderPicker, setShowOrderPicker] = useState(false);
+  const [paymentScreenshot, setPaymentScreenshot] = useState<{
+    uri: string;
+    name: string;
+    type: string;
+  } | null>(null);
+  const [screenshotError, setScreenshotError] = useState<string | null>(null);
 
   // Reset on open
   useEffect(() => {
@@ -80,12 +93,80 @@ export function RecordPaymentModal({
       setAmount("");
       setMethod("cash");
       setRemarks("");
+      setPaymentScreenshot(null);
+      setScreenshotError(null);
       setSelectedOrder(null);
       setShowOrderPicker(false);
       mutation.reset();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible]);
+
+  const handlePickImage = async () => {
+    try {
+      const { granted } =
+        await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!granted) {
+        Alert.alert(
+          "Permission Required",
+          "Photo library access is required to upload a payment screenshot.",
+        );
+        return;
+      }
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ["images"],
+        allowsEditing: true,
+        quality: 0.8,
+      });
+      if (!result.canceled && result.assets?.length) {
+        const asset = result.assets[0];
+        setPaymentScreenshot({
+          uri: asset.uri,
+          name: asset.fileName || asset.uri.split("/").pop() || "receipt.jpg",
+          type: asset.mimeType || "image/jpeg",
+        });
+        setScreenshotError(null);
+      }
+    } catch {
+      Alert.alert("Error", "Could not select image. Please try again.");
+    }
+  };
+
+  const handleTakePhoto = async () => {
+    try {
+      const { granted } = await ImagePicker.requestCameraPermissionsAsync();
+      if (!granted) {
+        Alert.alert(
+          "Permission Required",
+          "Camera access is required to take a payment screenshot.",
+        );
+        return;
+      }
+      const result = await ImagePicker.launchCameraAsync({
+        allowsEditing: true,
+        quality: 0.8,
+      });
+      if (!result.canceled && result.assets?.length) {
+        const asset = result.assets[0];
+        setPaymentScreenshot({
+          uri: asset.uri,
+          name: asset.fileName || asset.uri.split("/").pop() || "receipt.jpg",
+          type: asset.mimeType || "image/jpeg",
+        });
+        setScreenshotError(null);
+      }
+    } catch {
+      Alert.alert("Error", "Could not take photo. Please try again.");
+    }
+  };
+
+  const handleMethodSelect = (selectedMethod: OfflinePaymentMethod) => {
+    setMethod(selectedMethod);
+    if (selectedMethod === "cash") {
+      setPaymentScreenshot(null);
+      setScreenshotError(null);
+    }
+  };
 
   // Derive the effective remaining balance:
   // If an order is selected -> capped at that order's remaining due (and customer remaining due if provided)
@@ -127,11 +208,23 @@ export function RecordPaymentModal({
       return;
     }
 
+    if (method !== "cash" && !paymentScreenshot) {
+      const methodName =
+        PAYMENT_METHODS.find((p) => p.value === method)?.label || method;
+      const errorMsg = `Payment screenshot is compulsory for ${methodName} payments.`;
+      setScreenshotError(errorMsg);
+      Alert.alert("Screenshot Required", errorMsg);
+      return;
+    }
+
     // Build payload
     const payload: Parameters<typeof mutation.mutateAsync>[0] = {
       amount: parsedAmount.toFixed(2),
       payment_method: method,
       remarks: remarks.trim() || undefined,
+      ...(method !== "cash" && paymentScreenshot
+        ? { payment_screenshot: paymentScreenshot }
+        : {}),
     };
 
     if (isOrderMode) {
@@ -332,7 +425,7 @@ export function RecordPaymentModal({
                   {PAYMENT_METHODS.map((pm) => (
                     <Pressable
                       key={pm.value}
-                      onPress={() => setMethod(pm.value)}
+                      onPress={() => handleMethodSelect(pm.value)}
                       className={`flex-row items-center gap-1.5 rounded-xl border px-3 py-2.5 active:opacity-75 ${
                         method === pm.value
                           ? "border-brand bg-brand/10"
@@ -351,6 +444,106 @@ export function RecordPaymentModal({
                   ))}
                 </View>
               </View>
+
+              {/* Payment Screenshot (compulsory for non-cash) */}
+              {method !== "cash" && (
+                <View
+                  className={`rounded-2xl border ${
+                    screenshotError
+                      ? "border-red-500 bg-red-50/30"
+                      : "border-dashed border-border bg-background"
+                  } p-3.5`}
+                >
+                  <View className="flex-row items-center justify-between mb-2">
+                    <View className="flex-row items-center gap-1.5">
+                      <DollarSign size={14} color="#e8452c" />
+                      <Text className="text-xs font-bold text-ink">
+                        Payment Screenshot / Receipt *
+                      </Text>
+                    </View>
+                    <View className="rounded bg-red-100 px-2 py-0.5 border border-red-200">
+                      <Text className="text-[10px] font-bold text-red-700 uppercase">
+                        Compulsory
+                      </Text>
+                    </View>
+                  </View>
+
+                  {paymentScreenshot ? (
+                    <View className="rounded-xl border border-border bg-surface p-2.5">
+                      <View className="relative">
+                        <Image
+                          source={{ uri: paymentScreenshot.uri }}
+                          className="h-36 w-full rounded-lg"
+                          contentFit="contain"
+                        />
+                        <View className="mt-2 flex-row items-center justify-between">
+                          <Text
+                            numberOfLines={1}
+                            className="text-xs font-semibold text-ink flex-1 mr-2"
+                          >
+                            {paymentScreenshot.name}
+                          </Text>
+                          <View className="flex-row items-center gap-1.5">
+                            <Pressable
+                              onPress={handlePickImage}
+                              className="flex-row items-center gap-1 rounded-lg border border-border bg-surface px-2.5 py-1 active:opacity-70"
+                            >
+                              <RefreshCw size={11} color="#79726b" />
+                              <Text className="text-[11px] font-semibold text-ink">
+                                Change
+                              </Text>
+                            </Pressable>
+                            <Pressable
+                              onPress={() => {
+                                setPaymentScreenshot(null);
+                                setScreenshotError(null);
+                              }}
+                              className="flex-row items-center gap-1 rounded-lg border border-red-200 bg-red-50 px-2.5 py-1 active:opacity-70"
+                            >
+                              <Trash2 size={11} color="#e8452c" />
+                              <Text className="text-[11px] font-semibold text-brand">
+                                Remove
+                              </Text>
+                            </Pressable>
+                          </View>
+                        </View>
+                      </View>
+                    </View>
+                  ) : (
+                    <View className="items-center py-2">
+                      <Text className="text-xs text-ink-soft text-center mb-2.5">
+                        Please upload receipt or QR confirmation screenshot
+                      </Text>
+                      <View className="flex-row items-center gap-3">
+                        <Pressable
+                          onPress={handlePickImage}
+                          className="flex-row items-center gap-1.5 rounded-xl border border-border bg-surface px-3.5 py-2 shadow-sm active:opacity-75"
+                        >
+                          <ImageIcon size={14} color="#241a12" />
+                          <Text className="text-xs font-semibold text-ink">
+                            Gallery
+                          </Text>
+                        </Pressable>
+                        <Pressable
+                          onPress={handleTakePhoto}
+                          className="flex-row items-center gap-1.5 rounded-xl border border-border bg-surface px-3.5 py-2 shadow-sm active:opacity-75"
+                        >
+                          <Camera size={14} color="#241a12" />
+                          <Text className="text-xs font-semibold text-ink">
+                            Camera
+                          </Text>
+                        </Pressable>
+                      </View>
+                    </View>
+                  )}
+
+                  {Boolean(screenshotError) && (
+                    <Text className="mt-2 text-xs font-medium text-red-500">
+                      {screenshotError}
+                    </Text>
+                  )}
+                </View>
+              )}
 
               {/* Remarks */}
               <View>
@@ -374,7 +567,9 @@ export function RecordPaymentModal({
                 onPress={handleSubmit}
                 disabled={!isAmountValid || mutation.isPending}
                 className={`h-12 flex-row items-center justify-center gap-2 rounded-xl ${
-                  isAmountValid && !mutation.isPending
+                  isAmountValid &&
+                  !mutation.isPending &&
+                  (method === "cash" || Boolean(paymentScreenshot))
                     ? "bg-brand active:opacity-85"
                     : "bg-brand/40"
                 }`}
