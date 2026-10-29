@@ -74,17 +74,17 @@ export default function ProfileScreen() {
       >
         {/* Avatar + name banner */}
         <View className="items-center border-b border-border bg-surface px-5 pb-8 pt-4">
-        <View className="mb-4 h-20 w-20 items-center justify-center rounded-full bg-brand/10">
-          <User size={36} color="#e8452c" />
+          <View className="mb-4 h-20 w-20 items-center justify-center rounded-full bg-brand/10">
+            <User size={36} color="#e8452c" />
+          </View>
+          <Text className="text-lg font-bold text-ink">{displayName}</Text>
+          <View className="mt-1.5 rounded-full bg-brand/10 px-3 py-1">
+            <Text className="text-xs font-semibold text-brand">{roleLabel}</Text>
+          </View>
         </View>
-        <Text className="text-lg font-bold text-ink">{displayName}</Text>
-        <View className="mt-1.5 rounded-full bg-brand/10 px-3 py-1">
-          <Text className="text-xs font-semibold text-brand">{roleLabel}</Text>
-        </View>
-      </View>
 
-      {/* Info section */}
-      <View className="mx-5 mt-6 overflow-hidden rounded-2xl border border-border bg-surface">
+        {/* Info section */}
+        <View className="mx-5 mt-6 overflow-hidden rounded-2xl border border-border bg-surface">
         <Text className="border-b border-border px-4 py-3 text-[11px] font-bold uppercase tracking-wider text-ink-soft">
           Account Info
         </Text>

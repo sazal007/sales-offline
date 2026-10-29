@@ -199,7 +199,7 @@ export default function CustomerDetailScreen() {
   };
 
   return (
-    <SafeAreaView edges={["top"]} className="flex-1 bg-background">
+    <SafeAreaView edges={["top", "bottom"]} className="flex-1 bg-background">
       {/* Top Navigation Bar */}
       <View className="flex-row items-center justify-between border-b border-border bg-background px-4 py-3">
         <View className="flex-1 flex-row items-center gap-3 pr-2">
@@ -210,29 +210,15 @@ export default function CustomerDetailScreen() {
           >
             <ArrowLeft size={18} color="#241a12" strokeWidth={2.2} />
           </Pressable>
+          {customer && (
+            <Text numberOfLines={1} className="flex-1 text-sm font-bold text-ink">
+              {customer.store_name}
+            </Text>
+          )}
         </View>
 
         {customer && (
           <View className="flex-row items-center gap-2">
-            {totalRemaining > 0 && (
-              <Pressable
-                onPress={() => setPaymentModalVisible(true)}
-                hitSlop={4}
-                className="flex-row items-center gap-1.5 rounded-xl bg-brand px-3 py-2 shadow-sm active:opacity-85"
-              >
-                <PlusCircle size={13} color="#ffffff" strokeWidth={2.2} />
-                <Text className="text-xs font-bold text-white">
-                  Record Payment
-                </Text>
-              </Pressable>
-            )}
-            <Pressable
-              onPress={() => setEditModalVisible(true)}
-              hitSlop={6}
-              className="h-9 w-9 items-center justify-center rounded-xl border border-border bg-surface active:opacity-70"
-            >
-              <Pencil size={15} color="#241a12" />
-            </Pressable>
             <Pressable
               onPress={handleDelete}
               hitSlop={6}
@@ -323,25 +309,12 @@ export default function CustomerDetailScreen() {
                 </Text>
               </View>
 
-              {/* Phone + Call button */}
-              <View className="flex-row items-center justify-between">
-                <View className="flex-row items-center gap-2">
-                  <Phone size={13} color="#79726b" />
-                  <Text className="text-xs text-ink-soft">
-                    {customer.phone_number || "—"}
-                  </Text>
-                </View>
-                {Boolean(customer.phone_number) && (
-                  <Pressable
-                    onPress={() => handleCall(customer.phone_number)}
-                    className="flex-row items-center gap-1 rounded-lg bg-brand/10 px-2.5 py-1 active:opacity-75"
-                  >
-                    <Phone size={11} color="#e8452c" />
-                    <Text className="text-[11px] font-bold text-brand">
-                      Call
-                    </Text>
-                  </Pressable>
-                )}
+              {/* Phone */}
+              <View className="flex-row items-center gap-2">
+                <Phone size={13} color="#79726b" />
+                <Text className="text-xs text-ink-soft">
+                  {customer.phone_number || "—"}
+                </Text>
               </View>
 
               {/* Address */}
@@ -358,22 +331,9 @@ export default function CustomerDetailScreen() {
 
           {/* 2. Financial Overview Section */}
           <View>
-            <View className="mb-2 flex-row items-center justify-between">
-              <Text className="text-xs font-bold uppercase tracking-wider text-ink-soft">
-                Financial & Sales Overview
-              </Text>
-              {totalRemaining > 0 && (
-                <Pressable
-                  onPress={() => setPaymentModalVisible(true)}
-                  className="flex-row items-center gap-1.5 rounded-lg bg-brand/10 px-2.5 py-1 active:opacity-75"
-                >
-                  <PlusCircle size={12} color="#e8452c" strokeWidth={2.2} />
-                  <Text className="text-xs font-bold text-brand">
-                    Record Payment
-                  </Text>
-                </Pressable>
-              )}
-            </View>
+            <Text className="mb-2 text-xs font-bold uppercase tracking-wider text-ink-soft">
+              Financial &amp; Sales Overview
+            </Text>
 
             {/* 2x2 Metric Cards Grid */}
             <View className="flex-row flex-wrap gap-3">
@@ -576,6 +536,45 @@ export default function CustomerDetailScreen() {
             )}
           </View>
         </ScrollView>
+      )}
+
+      {/* Sticky Bottom Action Bar — only when customer is loaded */}
+      {customer && (
+        <View className="border-t border-border bg-surface px-4 pt-3 pb-2 gap-2.5">
+          {/* Record Payment — full width, prominent */}
+          {totalRemaining > 0 ? (
+            <Pressable
+              onPress={() => setPaymentModalVisible(true)}
+              className="h-12 flex-row items-center justify-center gap-2 rounded-xl bg-brand shadow-sm active:opacity-85"
+            >
+              <PlusCircle size={16} color="#ffffff" strokeWidth={2.2} />
+              <Text className="text-sm font-bold text-white">Record Payment</Text>
+            </Pressable>
+          ) : (
+            <View className="h-12 flex-row items-center justify-center gap-2 rounded-xl bg-emerald-50 border border-emerald-200">
+              <CheckCircle2 size={16} color="#059669" />
+              <Text className="text-sm font-semibold text-emerald-700">Fully Paid</Text>
+            </View>
+          )}
+
+          {/* Call + Edit Store side by side */}
+          <View className="flex-row gap-2.5">
+            <Pressable
+              onPress={() => handleCall(customer.phone_number)}
+              className="flex-1 h-11 flex-row items-center justify-center gap-2 rounded-xl border border-border bg-background active:opacity-75"
+            >
+              <Phone size={15} color="#241a12" />
+              <Text className="text-sm font-semibold text-ink">Call</Text>
+            </Pressable>
+            <Pressable
+              onPress={() => setEditModalVisible(true)}
+              className="flex-1 h-11 flex-row items-center justify-center gap-2 rounded-xl border border-border bg-background active:opacity-75"
+            >
+              <Pencil size={15} color="#241a12" />
+              <Text className="text-sm font-semibold text-ink">Edit Store</Text>
+            </Pressable>
+          </View>
+        </View>
       )}
 
       {/* Edit Customer Form Modal */}

@@ -2,6 +2,7 @@
 
 import { useAuth } from "@/context/AuthContext";
 import { useOfflineSalesStatsQuery } from "@/hooks/useOfflineOrderQueries";
+import { DutyStatusToggle } from "@/components/tracking/DutyStatusToggle";
 import type { UserRole } from "@/types/auth";
 import { router } from "expo-router";
 import {
@@ -78,15 +79,22 @@ export default function HomeScreen() {
       >
         {/* Greeting header */}
         <View className="flex-row items-center justify-between">
-          <View>
-            <Text className="text-xl font-bold text-ink">
+          <View className="flex-1 pr-2.5 justify-center">
+            <Text numberOfLines={1} className="text-lg font-bold text-ink">
               {greeting}, {user?.first_name ?? "there"} 👋
             </Text>
-            <Text className="mt-0.5 text-xs text-ink-soft">{roleLabel}</Text>
+            <Text className="mt-0.5 text-xs font-medium text-ink-soft">
+              {roleLabel}
+            </Text>
           </View>
-          <View className="h-10 w-10 items-center justify-center rounded-xl bg-brand/10">
-            <TrendingUp size={18} color="#e8452c" />
-          </View>
+
+          {user?.role === "Offline_SalesPerson" || user?.role === "SalesPerson" ? (
+            <DutyStatusToggle userRole={user?.role} />
+          ) : (
+            <View className="h-10 w-10 items-center justify-center rounded-xl bg-brand/10">
+              <TrendingUp size={18} color="#e8452c" />
+            </View>
+          )}
         </View>
 
         {/* Stats content */}
