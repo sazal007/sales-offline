@@ -54,11 +54,11 @@ export function DailyAttendanceCard({ userRole }: DailyAttendanceCardProps) {
     <>
       <Pressable
         onPress={() => setModalVisible(true)}
-        className="rounded-2xl border border-brand/20 bg-brand/5 p-4 shadow-sm active:opacity-85"
+        className="rounded-2xl border border-border bg-background p-4 shadow-sm active:opacity-85"
       >
         <View className="flex-row items-center justify-between">
           <View className="flex-1 flex-row items-center gap-3 pr-2">
-            <View className="h-11 w-11 items-center justify-center rounded-xl bg-brand/10">
+            <View className="h-11 w-11 items-center justify-center rounded-xl bg-brand-soft">
               <UserCheck size={22} color="#e8452c" />
             </View>
             <View className="flex-1">
