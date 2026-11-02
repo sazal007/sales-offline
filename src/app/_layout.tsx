@@ -1,4 +1,7 @@
 // src/app/_layout.tsx
+// Import background task definitions FIRST so they are registered before any
+// navigation or component renders (required by expo-task-manager).
+import "@/tasks/locationTask";
 
 import { AuthProvider } from "@/context/AuthContext";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";

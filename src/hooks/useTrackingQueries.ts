@@ -1,4 +1,9 @@
 // src/hooks/useTrackingQueries.ts
+//
+// NOTE: Background location pings while the app is backgrounded are handled
+// by the TaskManager task in src/tasks/locationTask.ts.
+// The useLocationPingInterval hook below handles foreground-only pings (faster,
+// every 30 s) so that while the app is visible updates remain frequent.
 
 import { useEffect, useRef } from "react";
 import { Platform } from "react-native";
@@ -62,10 +67,11 @@ async function pingCurrentLocation() {
 }
 
 /**
- * Hook to automatically send GPS location pings to the backend every 10 seconds.
- * Only runs when enabled is true.
+ * Hook to automatically send GPS location pings to the backend every 30 seconds
+ * while the app is in the foreground and the salesperson is online.
+ * Background pings are handled by the TaskManager task in src/tasks/locationTask.ts.
  */
-export function useLocationPingInterval(enabled = true, intervalMs = 10000) {
+export function useLocationPingInterval(enabled = true, intervalMs = 30_000) {
   const enabledRef = useRef(enabled);
   enabledRef.current = enabled;
 
@@ -104,8 +110,8 @@ export function useMyTrackingQuery(enabled = true) {
 
   const isOnline = Boolean(query.data?.is_online);
 
-  // Automatically broadcast GPS location every 10s when online
-  useLocationPingInterval(enabled && isOnline, 10000);
+  // Automatically broadcast GPS location every 30s while foregrounded
+  useLocationPingInterval(enabled && isOnline, 30_000);
 
   return query;
 }

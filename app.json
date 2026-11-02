@@ -8,7 +8,10 @@
     "scheme": "appsales",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "icon": "./assets/expo.icon",
+      "infoPlist": {
+        "UIBackgroundModes": ["location", "fetch"]
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -26,6 +29,17 @@
     },
     "plugins": [
       "expo-router",
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow Calleatmandu to use your location in the background to share your live position with dispatch.",
+          "locationAlwaysPermission": "Allow Calleatmandu to use your location in the background to share your live position with dispatch.",
+          "locationWhenInUsePermission": "Allow Calleatmandu to use your location to share your live position with dispatch.",
+          "isAndroidBackgroundLocationEnabled": true,
+          "isAndroidForegroundServiceEnabled": true,
+          "isIosBackgroundLocationEnabled": true
+        }
+      ],
       [
         "expo-splash-screen",
         {

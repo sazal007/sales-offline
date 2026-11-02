@@ -1,1 +1,3 @@
+minimumReleaseAgeExclude:
+  - expo-task-manager@58.0.13
 shamefullyHoist: true

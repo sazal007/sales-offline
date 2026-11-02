@@ -15,6 +15,10 @@ import {
   useSendLocationPingMutation,
   useToggleTrackingMutation,
 } from "@/hooks/useTrackingQueries";
+import {
+  startBackgroundLocationTracking,
+  stopBackgroundLocationTracking,
+} from "@/tasks/locationTask";
 
 interface DutyStatusToggleProps {
   userRole?: string;
@@ -48,6 +52,7 @@ export function DutyStatusToggle({ userRole }: DutyStatusToggleProps) {
       if (turnOnline) {
         setIsLocating(true);
         try {
+          // 1. Foreground permission
           const { status } = await Location.requestForegroundPermissionsAsync();
           if (status !== "granted") {
             Alert.alert(
@@ -57,6 +62,7 @@ export function DutyStatusToggle({ userRole }: DutyStatusToggleProps) {
             return;
           }
 
+          // 2. Get initial position and ping
           const position = await Location.getCurrentPositionAsync({
             accuracy:
               Platform.OS === "android"
@@ -78,8 +84,22 @@ export function DutyStatusToggle({ userRole }: DutyStatusToggleProps) {
           setIsLocating(false);
         }
 
+        // 3. Toggle online status on backend
         await toggleMutation.mutateAsync({ is_online: true });
+
+        // 4. Start background location task (requests "Always" permission)
+        const bgStarted = await startBackgroundLocationTracking();
+        if (!bgStarted) {
+          Alert.alert(
+            "Background Location Unavailable",
+            "Duty shift is active but background location tracking is off. " +
+              "Go to Settings → App → Location and choose \"Always\" to enable it.",
+            [{ text: "OK" }],
+          );
+        }
       } else {
+        // 5. Stop background task first, then toggle offline
+        await stopBackgroundLocationTracking();
         await toggleMutation.mutateAsync({ is_online: false });
       }
     } catch (err: unknown) {
