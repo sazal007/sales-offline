@@ -275,6 +275,8 @@ export default function SignInScreen() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showForgot, setShowForgot] = useState(false);
+  const [isPhoneFocused, setIsPhoneFocused] = useState(false);
+  const [isPasswordFocused, setIsPasswordFocused] = useState(false);
 
   const loginMutation = useLoginMutation();
 
@@ -294,115 +296,138 @@ export default function SignInScreen() {
         className="flex-1"
       >
         <ScrollView
-          contentContainerClassName="flex-1 px-6 pt-10 pb-6"
+          contentContainerStyle={{ flexGrow: 1, justifyContent: "center" }}
+          className="flex-1"
           keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
         >
-          {/* Header */}
-          <View className="mb-8">
-            <Text className="text-3xl font-bold text-ink">Welcome back</Text>
-            <Text className="mt-1.5 text-sm text-ink-soft">
-              Sign in to continue to Yachu Sales
-            </Text>
-          </View>
-
-          {/* Form */}
-          <View className="gap-4">
-            {/* Phone Number */}
-            <View className="gap-1.5">
-              <Text className="text-[11px] font-bold uppercase tracking-wider text-ink-soft">
-                Phone Number
+          <View className="w-full max-w-sm self-center px-6 py-8">
+            {/* Header */}
+            <View className="mb-8">
+              <Text className="text-3xl font-bold tracking-tight text-ink">
+                Welcome back
               </Text>
-              <View className="relative justify-center">
-                <Phone
-                  size={16}
-                  color="#79726b"
-                  style={{ position: "absolute", left: 14, zIndex: 1 }}
-                />
-                <TextInput
-                  value={phoneNumber}
-                  onChangeText={setPhoneNumber}
-                  placeholder="Enter your phone number"
-                  placeholderTextColor="#79726b"
-                  keyboardType="phone-pad"
-                  autoCapitalize="none"
-                  autoComplete="tel"
-                  textContentType="telephoneNumber"
-                  editable={!loginMutation.isPending}
-                  className="h-12 rounded-xl border border-border bg-surface pl-10 pr-4 text-sm text-ink"
-                />
-              </View>
+              <Text className="mt-1.5 text-sm text-ink-soft">
+                Sign in to continue to Yachu Sales
+              </Text>
             </View>
 
-            {/* Password */}
-            <View className="gap-1.5">
-              <Text className="text-[11px] font-bold uppercase tracking-wider text-ink-soft">
-                Password
-              </Text>
-              <View className="relative justify-center">
-                <Lock
-                  size={16}
-                  color="#79726b"
-                  style={{ position: "absolute", left: 14, zIndex: 1 }}
-                />
-                <TextInput
-                  value={password}
-                  onChangeText={setPassword}
-                  placeholder="••••••••"
-                  placeholderTextColor="#79726b"
-                  secureTextEntry={!showPassword}
-                  autoCapitalize="none"
-                  autoComplete="password"
-                  textContentType="password"
-                  editable={!loginMutation.isPending}
-                  className="h-12 rounded-xl border border-border bg-surface pl-10 pr-10 text-sm text-ink"
-                />
-                <Pressable
-                  onPress={() => setShowPassword((v) => !v)}
-                  disabled={loginMutation.isPending}
-                  hitSlop={8}
-                  style={{ position: "absolute", right: 12, zIndex: 1 }}
-                >
-                  {showPassword ? (
-                    <EyeOff size={16} color="#79726b" />
-                  ) : (
-                    <Eye size={16} color="#79726b" />
-                  )}
-                </Pressable>
-              </View>
-            </View>
-
-            {/* Forgot password */}
-            <Pressable
-              onPress={() => setShowForgot(true)}
-              disabled={loginMutation.isPending}
-              className="self-end"
-            >
-              <Text className="text-xs font-semibold text-brand">
-                Forgot password?
-              </Text>
-            </Pressable>
-
-            {/* API Error */}
-            {loginMutation.isError ? (
-              <Text className="text-sm text-red-600">
-                {loginMutation.error.message}
-              </Text>
-            ) : null}
-
-            {/* Sign In Button */}
-            <Pressable
-              onPress={handleSignIn}
-              disabled={loginMutation.isPending}
-              className="mt-1 h-12 items-center justify-center rounded-xl bg-brand shadow-sm"
-            >
-              {loginMutation.isPending ? (
-                <ActivityIndicator size="small" color="#ffffff" />
-              ) : (
-                <Text className="text-sm font-bold tracking-wide text-white">
-                  Sign In
+            {/* Form */}
+            <View className="gap-5">
+              {/* Phone Number */}
+              <View className="gap-1.5">
+                <Text className="text-[11px] font-bold uppercase tracking-wider text-ink-soft">
+                  Phone Number
                 </Text>
-              )}
-            </Pressable>
+                <View
+                  className={`h-12 flex-row items-center rounded-xl border bg-surface px-3.5 ${
+                    isPhoneFocused ? "border-brand" : "border-border"
+                  }`}
+                >
+                  <Phone
+                    size={16}
+                    color={isPhoneFocused ? "#e8452c" : "#79726b"}
+                    style={{ marginRight: 10 }}
+                  />
+                  <TextInput
+                    value={phoneNumber}
+                    onChangeText={setPhoneNumber}
+                    onFocus={() => setIsPhoneFocused(true)}
+                    onBlur={() => setIsPhoneFocused(false)}
+                    placeholder="Enter your phone number"
+                    placeholderTextColor="#79726b"
+                    keyboardType="phone-pad"
+                    autoCapitalize="none"
+                    autoComplete="tel"
+                    textContentType="telephoneNumber"
+                    editable={!loginMutation.isPending}
+                    className="flex-1 text-sm text-ink"
+                  />
+                </View>
+              </View>
+
+              {/* Password */}
+              <View className="gap-1.5">
+                <Text className="text-[11px] font-bold uppercase tracking-wider text-ink-soft">
+                  Password
+                </Text>
+                <View
+                  className={`h-12 flex-row items-center rounded-xl border bg-surface px-3.5 ${
+                    isPasswordFocused ? "border-brand" : "border-border"
+                  }`}
+                >
+                  <Lock
+                    size={16}
+                    color={isPasswordFocused ? "#e8452c" : "#79726b"}
+                    style={{ marginRight: 10 }}
+                  />
+                  <TextInput
+                    value={password}
+                    onChangeText={setPassword}
+                    onFocus={() => setIsPasswordFocused(true)}
+                    onBlur={() => setIsPasswordFocused(false)}
+                    placeholder="••••••••"
+                    placeholderTextColor="#79726b"
+                    secureTextEntry={!showPassword}
+                    autoCapitalize="none"
+                    autoComplete="password"
+                    textContentType="password"
+                    editable={!loginMutation.isPending}
+                    className="flex-1 text-sm text-ink"
+                  />
+                  <Pressable
+                    onPress={() => setShowPassword((v) => !v)}
+                    disabled={loginMutation.isPending}
+                    hitSlop={8}
+                    className="p-1"
+                  >
+                    {showPassword ? (
+                      <EyeOff size={16} color="#79726b" />
+                    ) : (
+                      <Eye size={16} color="#79726b" />
+                    )}
+                  </Pressable>
+                </View>
+              </View>
+
+              {/* Forgot password */}
+              <Pressable
+                onPress={() => setShowForgot(true)}
+                disabled={loginMutation.isPending}
+                className="self-end"
+                hitSlop={8}
+              >
+                <Text className="text-xs font-semibold text-brand">
+                  Forgot password?
+                </Text>
+              </Pressable>
+
+              {/* API Error */}
+              {loginMutation.isError ? (
+                <View className="rounded-xl border border-red-200 bg-red-50 p-3">
+                  <Text className="text-xs font-medium text-red-600">
+                    {loginMutation.error.message}
+                  </Text>
+                </View>
+              ) : null}
+
+              {/* Sign In Button */}
+              <Pressable
+                onPress={handleSignIn}
+                disabled={loginMutation.isPending}
+                className={`mt-1 h-12 items-center justify-center rounded-xl bg-brand shadow-sm active:opacity-90 ${
+                  loginMutation.isPending ? "opacity-75" : ""
+                }`}
+              >
+                {loginMutation.isPending ? (
+                  <ActivityIndicator size="small" color="#ffffff" />
+                ) : (
+                  <Text className="text-sm font-bold tracking-wide text-white">
+                    Sign In
+                  </Text>
+                )}
+              </Pressable>
+            </View>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
