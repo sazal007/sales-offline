@@ -111,7 +111,7 @@ export default function HomeScreen() {
             <Text className="mt-2 text-xs text-ink-soft">Loading stats...</Text>
           </View>
         ) : isError || !stats ? (
-          <View className="items-center justify-center rounded-2xl border border-border bg-surface py-12">
+          <View className="items-center justify-center rounded-2xl border border-border bg-white py-12">
             <AlertCircle size={28} color="#e8452c" />
             <Text className="mt-2 text-sm font-semibold text-ink">
               Failed to load stats
@@ -132,7 +132,7 @@ export default function HomeScreen() {
               </Text>
 
               {/* Total Sales — full width highlight card */}
-              <View className="mb-2.5 rounded-2xl border border-border bg-surface p-4 shadow-sm">
+              <View className="mb-2.5 rounded-2xl border border-border bg-white p-4">
                 <View className="flex-row items-center justify-between">
                   <Text className="text-xs font-medium text-ink-soft">
                     Total Sales
@@ -151,7 +151,7 @@ export default function HomeScreen() {
 
               {/* Paid + Remaining side by side */}
               <View className="flex-row gap-2.5">
-                <View className="flex-1 rounded-2xl border border-border bg-surface p-3.5 shadow-sm">
+                <View className="flex-1 rounded-2xl border border-border bg-white p-3.5">
                   <Text className="text-xs font-medium text-ink-soft">
                     Total Collected
                   </Text>
@@ -162,7 +162,7 @@ export default function HomeScreen() {
                     Paid amount
                   </Text>
                 </View>
-                <View className="flex-1 rounded-2xl border border-border bg-surface p-3.5 shadow-sm">
+                <View className="flex-1 rounded-2xl border border-border bg-white p-3.5">
                   <Text className="text-xs font-medium text-ink-soft">
                     Outstanding
                   </Text>
@@ -199,7 +199,7 @@ export default function HomeScreen() {
                 {/* Total Orders */}
                 <Pressable
                   onPress={() => router.push("/(tabs)/orders")}
-                  className="flex-1 rounded-2xl border border-border bg-surface p-3.5 shadow-sm active:opacity-80"
+                  className="flex-1 rounded-2xl border border-border bg-white p-3.5 active:opacity-80"
                 >
                   <View className="h-8 w-8 items-center justify-center rounded-xl bg-blue-50">
                     <ShoppingBag size={15} color="#2563eb" />
@@ -215,7 +215,7 @@ export default function HomeScreen() {
                 {/* Pending Orders */}
                 <Pressable
                   onPress={() => router.push("/(tabs)/orders")}
-                  className="flex-1 rounded-2xl border border-border bg-surface p-3.5 shadow-sm active:opacity-80"
+                  className="flex-1 rounded-2xl border border-border bg-white p-3.5 active:opacity-80"
                 >
                   <View className="h-8 w-8 items-center justify-center rounded-xl bg-amber-50">
                     <Clock size={15} color="#d97706" />
@@ -238,7 +238,7 @@ export default function HomeScreen() {
 
               <Pressable
                 onPress={() => router.push("/(tabs)/customers")}
-                className="rounded-2xl border border-border bg-surface p-4 shadow-sm active:opacity-80"
+                className="rounded-2xl border border-border bg-white p-4 active:opacity-80"
               >
                 <View className="flex-row items-center justify-between">
                   <View className="flex-row items-center gap-3">
@@ -286,7 +286,7 @@ export default function HomeScreen() {
                 <Pressable
                   key={ord.id || ord.order_code}
                   onPress={() => router.push("/(tabs)/orders")}
-                  className="mb-2.5 rounded-2xl border border-border bg-surface p-4 active:opacity-80"
+                  className="mb-2.5 rounded-2xl border border-border bg-white p-4 active:opacity-80"
                 >
                   <View className="flex-row items-center justify-between">
                     <Text className="text-sm font-bold text-ink">{ord.order_code}</Text>

@@ -54,7 +54,7 @@ export function DailyAttendanceCard({ userRole }: DailyAttendanceCardProps) {
     <>
       <Pressable
         onPress={() => setModalVisible(true)}
-        className="rounded-2xl border border-border bg-background p-4 shadow-sm active:opacity-85"
+        className="rounded-2xl border border-border bg-background p-4 active:opacity-85"
       >
         <View className="flex-row items-center justify-between">
           <View className="flex-1 flex-row items-center gap-3 pr-2">
@@ -73,7 +73,7 @@ export function DailyAttendanceCard({ userRole }: DailyAttendanceCardProps) {
             </View>
           </View>
 
-          <View className="flex-row items-center gap-1.5 rounded-xl bg-brand px-3 py-2 shadow-sm">
+          <View className="flex-row items-center gap-1.5 rounded-xl bg-brand px-3 py-2">
             <PlusCircle size={13} color="#ffffff" strokeWidth={2.2} />
             <Text className="text-xs font-bold text-white">Mark Now</Text>
           </View>

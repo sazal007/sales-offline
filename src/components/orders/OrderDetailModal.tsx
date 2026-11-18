@@ -76,7 +76,7 @@ export function OrderDetailModal({
           className="flex-1"
           onPress={isEditing ? onCancelEdit : onClose}
         />
-        <View className="max-h-[90%] rounded-t-3xl border-t border-border bg-background pb-8 pt-5 shadow-2xl">
+        <View className="max-h-[90%] rounded-t-3xl border-t border-border bg-background pb-8 pt-5">
           {/* Modal Header */}
           <View className="flex-row items-center justify-between border-b border-border px-6 pb-4">
             <View className="mr-3 flex-1">
@@ -106,7 +106,7 @@ export function OrderDetailModal({
                 activeOrder.order_status !== "Cancelled" && (
                   <Pressable
                     onPress={() => setPaymentModalVisible(true)}
-                    className="flex-row items-center gap-1.5 rounded-full bg-brand px-3 py-1.5 active:opacity-85 shadow-sm"
+                    className="flex-row items-center gap-1.5 rounded-full bg-brand px-3 py-1.5 active:opacity-85"
                     hitSlop={6}
                   >
                     <PlusCircle size={13} color="#ffffff" strokeWidth={2.2} />
@@ -127,7 +127,7 @@ export function OrderDetailModal({
               )}
               <Pressable
                 onPress={isEditing ? onCancelEdit : onClose}
-                className="h-8 w-8 items-center justify-center rounded-full bg-surface"
+                className="h-8 w-8 items-center justify-center rounded-full bg-white border border-border"
                 hitSlop={8}
               >
                 <X size={16} color="#79726b" />

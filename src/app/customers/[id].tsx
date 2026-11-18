@@ -206,7 +206,7 @@ export default function CustomerDetailScreen() {
           <Pressable
             onPress={() => router.back()}
             hitSlop={8}
-            className="h-9 w-9 items-center justify-center rounded-xl border border-border bg-surface active:opacity-70"
+            className="h-9 w-9 items-center justify-center rounded-xl border border-border bg-white active:opacity-70"
           >
             <ArrowLeft size={18} color="#241a12" strokeWidth={2.2} />
           </Pressable>
@@ -248,7 +248,7 @@ export default function CustomerDetailScreen() {
           </Text>
           <Pressable
             onPress={() => refetch()}
-            className="mt-4 rounded-xl border border-border bg-surface px-5 py-2.5 active:opacity-80"
+            className="mt-4 rounded-xl border border-border bg-white px-5 py-2.5 active:opacity-80"
           >
             <Text className="text-xs font-semibold text-ink">Try Again</Text>
           </Pressable>
@@ -270,7 +270,7 @@ export default function CustomerDetailScreen() {
           }
         >
           {/* 1. Store Header & Identity Card */}
-          <View className="rounded-2xl border border-border bg-surface p-4 shadow-sm">
+          <View className="rounded-2xl border border-border bg-white p-4">
             {/* Store name + active badge on one compact row */}
             <View className="flex-row items-center gap-3">
               <View className="h-10 w-10 items-center justify-center rounded-xl bg-brand/10">
@@ -338,7 +338,7 @@ export default function CustomerDetailScreen() {
             {/* 2x2 Metric Cards Grid */}
             <View className="flex-row flex-wrap gap-3">
               {/* Total Orders Card */}
-              <View className="flex-1 min-w-[45%] rounded-2xl border border-border bg-surface p-3.5 shadow-sm">
+              <View className="flex-1 min-w-[45%] rounded-2xl border border-border bg-white p-3.5">
                 <View className="flex-row items-center justify-between">
                   <Text className="text-xs font-medium text-ink-soft">
                     Total Orders
@@ -356,7 +356,7 @@ export default function CustomerDetailScreen() {
               </View>
 
               {/* Total Purchased Card */}
-              <View className="flex-1 min-w-[45%] rounded-2xl border border-border bg-surface p-3.5 shadow-sm">
+              <View className="flex-1 min-w-[45%] rounded-2xl border border-border bg-white p-3.5">
                 <View className="flex-row items-center justify-between">
                   <Text className="text-xs font-medium text-ink-soft">
                     Total Purchased
@@ -374,7 +374,7 @@ export default function CustomerDetailScreen() {
               </View>
 
               {/* Total Paid Card */}
-              <View className="flex-1 min-w-[45%] rounded-2xl border border-border bg-surface p-3.5 shadow-sm">
+              <View className="flex-1 min-w-[45%] rounded-2xl border border-border bg-white p-3.5">
                 <View className="flex-row items-center justify-between">
                   <Text className="text-xs font-medium text-ink-soft">
                     Total Paid
@@ -397,7 +397,7 @@ export default function CustomerDetailScreen() {
                   if (totalRemaining > 0) setPaymentModalVisible(true);
                 }}
                 disabled={totalRemaining <= 0}
-                className="flex-1 min-w-[45%] rounded-2xl border border-border bg-surface p-3.5 shadow-sm active:opacity-80"
+                className="flex-1 min-w-[45%] rounded-2xl border border-border bg-white p-3.5 active:opacity-80"
               >
                 <View className="flex-row items-center justify-between">
                   <Text className="text-xs font-medium text-ink-soft">
@@ -435,11 +435,11 @@ export default function CustomerDetailScreen() {
             </Text>
 
             {isLoadingOrders ? (
-              <View className="items-center justify-center rounded-2xl border border-border bg-surface py-6">
+              <View className="items-center justify-center rounded-2xl border border-border bg-white py-6">
                 <ActivityIndicator size="small" color="#e8452c" />
               </View>
             ) : customerOrders.length === 0 ? (
-              <View className="items-center justify-center rounded-2xl border border-dashed border-border bg-surface py-8 gap-1.5">
+              <View className="items-center justify-center rounded-2xl border border-dashed border-border bg-white py-8 gap-1.5">
                 <Package size={24} color="#79726b" />
                 <Text className="text-xs text-ink-soft">No orders yet</Text>
               </View>
@@ -463,7 +463,7 @@ export default function CustomerDetailScreen() {
                     <Pressable
                       key={order.id ?? order.order_code}
                       onPress={() => handleOpenOrderDetail(order)}
-                      className="rounded-2xl border border-border bg-surface p-4 shadow-sm active:opacity-85"
+                      className="rounded-2xl border border-border bg-white p-4 active:opacity-85"
                     >
                       {/* Header: order code + status badge */}
                       <View className="flex-row items-center justify-between">
@@ -540,12 +540,12 @@ export default function CustomerDetailScreen() {
 
       {/* Sticky Bottom Action Bar — only when customer is loaded */}
       {customer && (
-        <View className="border-t border-border bg-surface px-4 pt-3 pb-2 gap-2.5">
+        <View className="border-t border-border bg-white px-4 pt-3 pb-2 gap-2.5">
           {/* Record Payment — full width, prominent */}
           {totalRemaining > 0 ? (
             <Pressable
               onPress={() => setPaymentModalVisible(true)}
-              className="h-12 flex-row items-center justify-center gap-2 rounded-xl bg-brand shadow-sm active:opacity-85"
+              className="h-12 flex-row items-center justify-center gap-2 rounded-xl bg-brand active:opacity-85"
             >
               <PlusCircle size={16} color="#ffffff" strokeWidth={2.2} />
               <Text className="text-sm font-bold text-white">Record Payment</Text>

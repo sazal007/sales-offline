@@ -443,7 +443,7 @@ export function CreateOrderModal({
         className="flex-1 justify-end bg-black/50"
       >
         <Pressable className="flex-1" onPress={onClose} />
-        <View className="max-h-[92%] rounded-t-3xl border-t border-border bg-background pb-8 pt-5 shadow-2xl">
+        <View className="max-h-[92%] rounded-t-3xl border-t border-border bg-background pb-8 pt-5">
           {/* Modal Header */}
           <View className="flex-row items-center justify-between border-b border-border px-6 pb-4">
             <View>
@@ -456,7 +456,7 @@ export function CreateOrderModal({
             </View>
             <Pressable
               onPress={onClose}
-              className="h-8 w-8 items-center justify-center rounded-full bg-surface"
+              className="h-8 w-8 items-center justify-center rounded-full bg-white border border-border"
               hitSlop={8}
             >
               <X size={16} color="#79726b" />
@@ -484,7 +484,7 @@ export function CreateOrderModal({
 
               <Pressable
                 onPress={() => setCustomerPickerOpen((prev) => !prev)}
-                className={`h-12 flex-row items-center justify-between rounded-xl border bg-surface px-4 ${
+                className={`h-12 flex-row items-center justify-between rounded-xl border bg-white px-4 ${
                   formErrors.customer ? "border-red-500" : "border-border"
                 }`}
               >
@@ -513,7 +513,7 @@ export function CreateOrderModal({
               </Pressable>
 
               {customerPickerOpen && (
-                <View className="mt-1.5 rounded-xl border border-border bg-surface shadow-md overflow-hidden">
+                <View className="mt-1.5 rounded-xl border border-border bg-white overflow-hidden">
                   {/* Search input */}
                   <View className="flex-row items-center gap-2 border-b border-border px-3 py-2">
                     <Search size={14} color="#79726b" />
@@ -573,7 +573,7 @@ export function CreateOrderModal({
                           className={`flex-row items-center justify-between rounded-lg p-2.5 ${
                             Number(c.id) === selectedCustomerId
                               ? "bg-brand/10"
-                              : "active:bg-surface-soft"
+                              : "active:bg-neutral-50"
                           }`}
                         >
                           <View className="flex-1 pr-2">
@@ -627,7 +627,7 @@ export function CreateOrderModal({
                   className={`flex-1 h-10 flex-row items-center justify-center gap-1.5 rounded-xl border ${
                     orderDate === new Date().toISOString().split("T")[0]
                       ? "border-brand bg-brand/10"
-                      : "border-border bg-surface"
+                      : "border-border bg-white"
                   }`}
                 >
                   <Calendar
@@ -664,7 +664,7 @@ export function CreateOrderModal({
                     orderDate ===
                     new Date(Date.now() - 86400000).toISOString().split("T")[0]
                       ? "border-brand bg-brand/10"
-                      : "border-border bg-surface"
+                      : "border-border bg-white"
                   }`}
                 >
                   <Text
@@ -689,7 +689,7 @@ export function CreateOrderModal({
                           .toISOString()
                           .split("T")[0])
                       ? "border-brand bg-brand/10"
-                      : "border-border bg-surface"
+                      : "border-border bg-white"
                   }`}
                 >
                   <Text
@@ -712,7 +712,7 @@ export function CreateOrderModal({
               {/* Date Picker Component */}
               {showDatePicker &&
                 (Platform.OS === "ios" ? (
-                  <View className="mt-2.5 rounded-2xl border border-border bg-background p-3 shadow-sm">
+                  <View className="mt-2.5 rounded-2xl border border-border bg-background p-3">
                     <View className="flex-row items-center justify-between pb-2 mb-1 border-b border-border">
                       <Text className="text-xs font-bold text-ink">
                         Select Order Date
@@ -797,7 +797,7 @@ export function CreateOrderModal({
                 return (
                   <View
                     key={idx}
-                    className="mb-2.5 rounded-xl border border-border bg-surface p-3"
+                    className="mb-2.5 rounded-xl border border-border bg-white p-3"
                   >
                     <View className="flex-row items-center justify-between pb-1.5">
                       <Text className="text-[11px] font-bold text-ink-soft uppercase">
@@ -822,7 +822,7 @@ export function CreateOrderModal({
                           isDropdownOpen ? null : idx,
                         );
                       }}
-                      className="mt-1 flex-row items-center justify-between rounded-xl border border-border bg-background p-2.5 active:bg-surface-soft"
+                      className="mt-1 flex-row items-center justify-between rounded-xl border border-border bg-background p-2.5 active:bg-neutral-50"
                     >
                       <View className="flex-1 pr-2">
                         <View className="flex-row items-center gap-2">
@@ -885,8 +885,8 @@ export function CreateOrderModal({
 
                     {/* Product Search & Dropdown Picker */}
                     {isDropdownOpen && (
-                      <View className="mt-2 rounded-xl border border-border bg-background p-2 shadow-lg">
-                        <View className="mb-2 flex-row items-center rounded-lg border border-border bg-surface px-2.5 py-1.5">
+                      <View className="mt-2 rounded-xl border border-border bg-background p-2">
+                        <View className="mb-2 flex-row items-center rounded-lg border border-border bg-white px-2.5 py-1.5">
                           <Search size={14} color="#79726b" />
                           <TextInput
                             value={productSearch}
@@ -932,7 +932,7 @@ export function CreateOrderModal({
                                   className={`flex-row items-center justify-between rounded-lg p-2 mb-1 border ${
                                     isSelected
                                       ? "border-brand/40 bg-brand/10"
-                                      : "border-transparent bg-surface active:bg-surface-soft"
+                                      : "border-transparent bg-white active:bg-neutral-50"
                                   }`}
                                 >
                                   <View className="flex-1 pr-2">
@@ -1032,8 +1032,8 @@ export function CreateOrderModal({
                           disabled={it.quantity <= 1}
                           className={`h-8 w-8 items-center justify-center rounded-lg border ${
                             it.quantity <= 1
-                              ? "border-border/40 bg-surface opacity-40"
-                              : "border-border bg-surface active:bg-surface-soft"
+                              ? "border-border/40 bg-white opacity-40"
+                              : "border-border bg-white active:bg-neutral-50"
                           }`}
                         >
                           <Minus size={13} color="#241a12" />
@@ -1050,14 +1050,14 @@ export function CreateOrderModal({
                             );
                           }}
                           keyboardType="numeric"
-                          className="h-8 min-w-[36px] rounded-lg border border-border bg-surface px-2 text-center text-xs font-bold text-ink"
+                          className="h-8 min-w-[36px] rounded-lg border border-border bg-white px-2 text-center text-xs font-bold text-ink"
                         />
 
                         <Pressable
                           onPress={() =>
                             handleUpdateItem(idx, "quantity", it.quantity + 1)
                           }
-                          className="h-8 w-8 items-center justify-center rounded-lg border border-border bg-surface active:bg-surface-soft"
+                          className="h-8 w-8 items-center justify-center rounded-lg border border-border bg-white active:bg-neutral-50"
                         >
                           <Plus size={13} color="#241a12" />
                         </Pressable>
@@ -1114,7 +1114,7 @@ export function CreateOrderModal({
                   placeholder="e.g. 15000.00"
                   placeholderTextColor="#79726b"
                   keyboardType="numeric"
-                  className={`h-11 rounded-xl border bg-surface px-3 text-sm font-bold text-ink ${
+                  className={`h-11 rounded-xl border bg-white px-3 text-sm font-bold text-ink ${
                     formErrors.total_amount
                       ? "border-red-500"
                       : "border-border"
@@ -1139,14 +1139,14 @@ export function CreateOrderModal({
                   placeholderTextColor="#79726b"
                   multiline
                   numberOfLines={2}
-                  className="min-h-[60px] rounded-xl border border-border bg-surface p-3 text-xs text-ink"
+                  className="min-h-[60px] rounded-xl border border-border bg-white p-3 text-xs text-ink"
                 />
               </View>
 
             </View>
 
             {/* 5. Pre-paid Toggle & Prepayment Section (At the last) */}
-            <View className="mb-6 rounded-2xl border border-border bg-surface/50 p-4">
+            <View className="mb-6 rounded-2xl border border-border bg-white p-4">
               {/* Pre-paid Toggle Row */}
               <View className="flex-row items-center justify-between">
                 <View className="flex-1 pr-3">
@@ -1270,7 +1270,7 @@ export function CreateOrderModal({
                             className={`rounded-xl border px-3 py-2 ${
                               isSelected
                                 ? "border-brand bg-brand/10"
-                                : "border-border bg-surface"
+                                : "border-border bg-white"
                             }`}
                           >
                             <Text
@@ -1310,7 +1310,7 @@ export function CreateOrderModal({
                       </View>
 
                       {paymentScreenshot ? (
-                        <View className="rounded-xl border border-border bg-surface p-2.5">
+                        <View className="rounded-xl border border-border bg-white p-2.5">
                           <View className="relative">
                             <Image
                               source={{ uri: paymentScreenshot.uri }}
@@ -1327,7 +1327,7 @@ export function CreateOrderModal({
                               <View className="flex-row items-center gap-1.5">
                                 <Pressable
                                   onPress={handlePickImage}
-                                  className="flex-row items-center gap-1 rounded-lg border border-border bg-surface px-2.5 py-1 active:opacity-70"
+                                  className="flex-row items-center gap-1 rounded-lg border border-border bg-white px-2.5 py-1 active:opacity-70"
                                 >
                                   <RefreshCw size={11} color="#79726b" />
                                   <Text className="text-[11px] font-semibold text-ink">
@@ -1362,7 +1362,7 @@ export function CreateOrderModal({
                           <View className="flex-row items-center gap-3">
                             <Pressable
                               onPress={handlePickImage}
-                              className="flex-row items-center gap-1.5 rounded-xl border border-border bg-surface px-3.5 py-2 shadow-sm active:opacity-75"
+                              className="flex-row items-center gap-1.5 rounded-xl border border-border bg-white px-3.5 py-2 active:opacity-75"
                             >
                               <ImageIcon size={14} color="#241a12" />
                               <Text className="text-xs font-semibold text-ink">
@@ -1371,7 +1371,7 @@ export function CreateOrderModal({
                             </Pressable>
                             <Pressable
                               onPress={handleTakePhoto}
-                              className="flex-row items-center gap-1.5 rounded-xl border border-border bg-surface px-3.5 py-2 shadow-sm active:opacity-75"
+                              className="flex-row items-center gap-1.5 rounded-xl border border-border bg-white px-3.5 py-2 active:opacity-75"
                             >
                               <Camera size={14} color="#241a12" />
                               <Text className="text-xs font-semibold text-ink">
@@ -1407,7 +1407,7 @@ export function CreateOrderModal({
               <Pressable
                 onPress={onClose}
                 disabled={createMutation.isPending}
-                className="flex-1 h-12 items-center justify-center rounded-xl border border-border bg-surface active:opacity-70"
+                className="flex-1 h-12 items-center justify-center rounded-xl border border-border bg-white active:opacity-70"
               >
                 <Text className="text-sm font-semibold text-ink">Cancel</Text>
               </Pressable>

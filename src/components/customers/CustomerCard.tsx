@@ -31,7 +31,7 @@ export function CustomerCard({
   return (
     <Pressable
       onPress={() => onPress?.(customer)}
-      className="rounded-2xl border border-border bg-surface p-4 shadow-sm active:opacity-90"
+      className="rounded-2xl border border-border bg-white p-4 active:opacity-90"
     >
       {/* Card Header: Store Name + Edit/Delete actions */}
       <View className="flex-row items-start justify-between">

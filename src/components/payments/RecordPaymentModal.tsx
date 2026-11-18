@@ -263,7 +263,7 @@ export function RecordPaymentModal({
       >
         <Pressable className="flex-1" onPress={onClose} />
 
-        <View className="max-h-[88%] rounded-t-3xl border-t border-border bg-background pb-10 shadow-2xl">
+        <View className="max-h-[88%] rounded-t-3xl border-t border-border bg-background pb-10">
           {/* Header */}
           <View className="flex-row items-center justify-between border-b border-border px-5 py-4">
             <View>
@@ -279,7 +279,7 @@ export function RecordPaymentModal({
             <Pressable
               onPress={onClose}
               hitSlop={8}
-              className="h-8 w-8 items-center justify-center rounded-full bg-surface"
+              className="h-8 w-8 items-center justify-center rounded-full bg-white border border-border"
             >
               <X size={16} color="#79726b" />
             </Pressable>
@@ -321,7 +321,7 @@ export function RecordPaymentModal({
                   </Text>
                   <Pressable
                     onPress={() => setShowOrderPicker((v) => !v)}
-                    className="flex-row items-center justify-between rounded-xl border border-border bg-surface px-3.5 py-3 active:opacity-75"
+                    className="flex-row items-center justify-between rounded-xl border border-border bg-white px-3.5 py-3 active:opacity-75"
                   >
                     <Text className={`text-sm ${selectedOrder ? "font-semibold text-ink" : "text-ink-soft"}`}>
                       {selectedOrder
@@ -332,7 +332,7 @@ export function RecordPaymentModal({
                   </Pressable>
 
                   {showOrderPicker && (
-                    <View className="mt-1.5 rounded-xl border border-border bg-surface overflow-hidden">
+                    <View className="mt-1.5 rounded-xl border border-border bg-white overflow-hidden">
                       {/* No specific order */}
                       <Pressable
                         onPress={() => {
@@ -405,7 +405,7 @@ export function RecordPaymentModal({
                   className={`rounded-xl border px-3.5 py-3 text-sm font-semibold text-ink ${
                     isOverpaying
                       ? "border-red-500 bg-red-50/20"
-                      : "border-border bg-surface"
+                      : "border-border bg-white"
                   }`}
                 />
                 {isOverpaying && (
@@ -429,7 +429,7 @@ export function RecordPaymentModal({
                       className={`flex-row items-center gap-1.5 rounded-xl border px-3 py-2.5 active:opacity-75 ${
                         method === pm.value
                           ? "border-brand bg-brand/10"
-                          : "border-border bg-surface"
+                          : "border-border bg-white"
                       }`}
                     >
                       {pm.icon}
@@ -469,7 +469,7 @@ export function RecordPaymentModal({
                   </View>
 
                   {paymentScreenshot ? (
-                    <View className="rounded-xl border border-border bg-surface p-2.5">
+                    <View className="rounded-xl border border-border bg-white p-2.5">
                       <View className="relative">
                         <Image
                           source={{ uri: paymentScreenshot.uri }}
@@ -486,7 +486,7 @@ export function RecordPaymentModal({
                           <View className="flex-row items-center gap-1.5">
                             <Pressable
                               onPress={handlePickImage}
-                              className="flex-row items-center gap-1 rounded-lg border border-border bg-surface px-2.5 py-1 active:opacity-70"
+                              className="flex-row items-center gap-1 rounded-lg border border-border bg-white px-2.5 py-1 active:opacity-70"
                             >
                               <RefreshCw size={11} color="#79726b" />
                               <Text className="text-[11px] font-semibold text-ink">
@@ -517,7 +517,7 @@ export function RecordPaymentModal({
                       <View className="flex-row items-center gap-3">
                         <Pressable
                           onPress={handlePickImage}
-                          className="flex-row items-center gap-1.5 rounded-xl border border-border bg-surface px-3.5 py-2 shadow-sm active:opacity-75"
+                          className="flex-row items-center gap-1.5 rounded-xl border border-border bg-white px-3.5 py-2 active:opacity-75"
                         >
                           <ImageIcon size={14} color="#241a12" />
                           <Text className="text-xs font-semibold text-ink">
@@ -526,7 +526,7 @@ export function RecordPaymentModal({
                         </Pressable>
                         <Pressable
                           onPress={handleTakePhoto}
-                          className="flex-row items-center gap-1.5 rounded-xl border border-border bg-surface px-3.5 py-2 shadow-sm active:opacity-75"
+                          className="flex-row items-center gap-1.5 rounded-xl border border-border bg-white px-3.5 py-2 active:opacity-75"
                         >
                           <Camera size={14} color="#241a12" />
                           <Text className="text-xs font-semibold text-ink">
@@ -557,7 +557,7 @@ export function RecordPaymentModal({
                   placeholderTextColor="#79726b"
                   multiline
                   numberOfLines={2}
-                  className="rounded-xl border border-border bg-surface px-3.5 py-3 text-sm text-ink"
+                  className="rounded-xl border border-border bg-white px-3.5 py-3 text-sm text-ink"
                   style={{ minHeight: 64, textAlignVertical: "top" }}
                 />
               </View>

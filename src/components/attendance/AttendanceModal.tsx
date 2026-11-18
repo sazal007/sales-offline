@@ -236,7 +236,7 @@ export function AttendanceModal({
       >
         <Pressable className="flex-1" onPress={onClose} />
 
-        <View className="max-h-[90%] rounded-t-3xl border-t border-border bg-background pb-8 shadow-2xl">
+        <View className="max-h-[90%] rounded-t-3xl border-t border-border bg-background pb-8">
           {/* Header */}
           <View className="flex-row items-center justify-between border-b border-border px-5 py-4">
             <View>
@@ -255,7 +255,7 @@ export function AttendanceModal({
             <Pressable
               onPress={onClose}
               hitSlop={8}
-              className="h-8 w-8 items-center justify-center rounded-full bg-surface"
+              className="h-8 w-8 items-center justify-center rounded-full bg-white border border-border"
             >
               <X size={16} color="#79726b" />
             </Pressable>
@@ -277,7 +277,7 @@ export function AttendanceModal({
                 </View>
 
                 {imageUri ? (
-                  <View className="items-center rounded-2xl border border-border bg-surface p-3">
+                  <View className="items-center rounded-2xl border border-border bg-white p-3">
                     <Image
                       source={{ uri: imageUri }}
                       className="h-44 w-44 rounded-xl"
@@ -298,7 +298,7 @@ export function AttendanceModal({
                 ) : (
                   <Pressable
                     onPress={handleTakePhoto}
-                    className="rounded-2xl border-2 border-dashed border-border bg-surface p-5 items-center justify-center gap-3 active:opacity-85"
+                    className="rounded-2xl border-2 border-dashed border-border bg-white p-5 items-center justify-center gap-3 active:opacity-85"
                   >
                     <View className="h-12 w-12 items-center justify-center rounded-full bg-brand/10">
                       <Camera size={22} color="#e8452c" />
@@ -312,7 +312,7 @@ export function AttendanceModal({
                       </Text>
                     </View>
                     <View className="pt-1">
-                      <View className="flex-row items-center gap-2 rounded-xl bg-brand px-5 py-2.5 shadow-sm">
+                      <View className="flex-row items-center gap-2 rounded-xl bg-brand px-5 py-2.5">
                         <Camera size={15} color="#ffffff" strokeWidth={2.2} />
                         <Text className="text-xs font-bold text-white">
                           Open Camera
@@ -348,7 +348,7 @@ export function AttendanceModal({
                   </Pressable>
                 </View>
 
-                <View className="rounded-xl border border-border bg-surface p-3.5 gap-2">
+                <View className="rounded-xl border border-border bg-white p-3.5 gap-2">
                   <View className="flex-row items-center justify-between">
                     <View className="flex-row items-center gap-2">
                       <View className="h-7 w-7 items-center justify-center rounded-lg bg-blue-50">
@@ -402,7 +402,7 @@ export function AttendanceModal({
                     onChangeText={setLocationName}
                     placeholder="e.g. Thamel, Kathmandu or Shop Name"
                     placeholderTextColor="#79726b"
-                    className="flex-1 rounded-xl border border-border bg-surface py-3 pl-10 pr-3.5 text-sm font-medium text-ink"
+                    className="flex-1 rounded-xl border border-border bg-white py-3 pl-10 pr-3.5 text-sm font-medium text-ink"
                   />
                 </View>
               </View>
@@ -411,7 +411,7 @@ export function AttendanceModal({
               <Pressable
                 onPress={handleSubmit}
                 disabled={!isFormValid || postMutation.isPending}
-                className={`mt-2 h-12 flex-row items-center justify-center gap-2 rounded-xl shadow-sm ${
+                className={`mt-2 h-12 flex-row items-center justify-center gap-2 rounded-xl ${
                   isFormValid && !postMutation.isPending
                     ? "bg-brand active:opacity-85"
                     : "bg-brand/40"

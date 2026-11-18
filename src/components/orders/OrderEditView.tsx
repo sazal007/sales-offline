@@ -418,7 +418,7 @@ export function OrderEditView({
           return (
             <View
               key={idx}
-              className="mb-2.5 rounded-2xl border border-border bg-surface p-3.5 shadow-sm"
+              className="mb-2.5 rounded-2xl border border-border bg-white p-3.5"
             >
               {/* Item Header */}
               <View className="flex-row items-center justify-between pb-1.5">
@@ -442,7 +442,7 @@ export function OrderEditView({
                   setProductSearch("");
                   setOpenProductDropdownIndex(isDropdownOpen ? null : idx);
                 }}
-                className="mt-1 flex-row items-center justify-between rounded-xl border border-border bg-background p-2.5 active:bg-surface-soft"
+                className="mt-1 flex-row items-center justify-between rounded-xl border border-border bg-background p-2.5 active:bg-neutral-50"
               >
                 <View className="flex-1 pr-2">
                   <View className="flex-row items-center gap-2">
@@ -497,8 +497,8 @@ export function OrderEditView({
 
               {/* Product Search & Dropdown Picker */}
               {isDropdownOpen && (
-                <View className="mt-2 rounded-xl border border-border bg-background p-2 shadow-lg">
-                  <View className="mb-2 flex-row items-center rounded-lg border border-border bg-surface px-2.5 py-1.5">
+                <View className="mt-2 rounded-xl border border-border bg-background p-2">
+                  <View className="mb-2 flex-row items-center rounded-lg border border-border bg-white px-2.5 py-1.5">
                     <Search size={14} color="#79726b" />
                     <TextInput
                       value={productSearch}
@@ -539,7 +539,7 @@ export function OrderEditView({
                             key={p.inventory_id ?? p.product_id}
                             onPress={() => handleSelectProduct(idx, p)}
                             className={`flex-row items-center justify-between rounded-lg p-2.5 mb-1 ${
-                              isChosen ? "bg-brand/10" : "active:bg-surface"
+                              isChosen ? "bg-brand/10" : "active:bg-neutral-50"
                             }`}
                           >
                             <View className="flex-1 pr-2">
@@ -581,7 +581,7 @@ export function OrderEditView({
                     onPress={() =>
                       handleUpdateQuantity(idx, it.quantity - 1)
                     }
-                    className="h-8 w-8 items-center justify-center active:bg-surface-soft"
+                    className="h-8 w-8 items-center justify-center active:bg-neutral-50"
                     hitSlop={4}
                   >
                     <Minus size={13} color="#79726b" />
@@ -599,7 +599,7 @@ export function OrderEditView({
                     onPress={() =>
                       handleUpdateQuantity(idx, it.quantity + 1)
                     }
-                    className="h-8 w-8 items-center justify-center active:bg-surface-soft"
+                    className="h-8 w-8 items-center justify-center active:bg-neutral-50"
                     hitSlop={4}
                   >
                     <Plus size={13} color="#79726b" />
@@ -612,7 +612,7 @@ export function OrderEditView({
 
         {/* Calculated Items Total Pill & Quick Apply */}
         {calculatedItemsTotal > 0 && (
-          <View className="mt-1 flex-row items-center justify-between rounded-xl border border-border bg-surface p-2.5">
+          <View className="mt-1 flex-row items-center justify-between rounded-xl border border-border bg-white p-2.5">
             <View>
               <Text className="text-[10px] font-medium text-ink-soft">
                 Calculated Items Value
@@ -643,7 +643,7 @@ export function OrderEditView({
         </Text>
         <Pressable
           onPress={() => setShowDatePicker(true)}
-          className="h-12 flex-row items-center justify-between rounded-xl border border-border bg-surface px-4 active:bg-surface-soft"
+          className="h-12 flex-row items-center justify-between rounded-xl border border-border bg-white px-4 active:bg-neutral-50"
         >
           <View className="flex-row items-center gap-2.5">
             <Calendar size={16} color="#e8452c" />
@@ -653,7 +653,7 @@ export function OrderEditView({
         </Pressable>
 
         {showDatePicker && (
-          <View className="mt-2 rounded-xl border border-border bg-surface p-2">
+          <View className="mt-2 rounded-xl border border-border bg-white p-2">
             <DateTimePicker
               value={dateObject}
               mode="date"
@@ -695,7 +695,7 @@ export function OrderEditView({
           Total Order Amount (Rs.) *
         </Text>
         <View
-          className={`flex-row items-center rounded-xl border bg-surface px-4 ${
+          className={`flex-row items-center rounded-xl border bg-white px-4 ${
             formErrors.total_amount ? "border-red-500" : "border-border"
           }`}
         >
@@ -731,7 +731,7 @@ export function OrderEditView({
           Paid Amount (Rs.)
         </Text>
         <View
-          className={`flex-row items-center rounded-xl border bg-surface px-4 ${
+          className={`flex-row items-center rounded-xl border bg-white px-4 ${
             formErrors.paid_amount ? "border-red-500" : "border-border"
           }`}
         >
@@ -761,7 +761,7 @@ export function OrderEditView({
         )}
 
         {/* Remaining Balance Summary Pill */}
-        <View className="mt-2.5 flex-row items-center justify-between rounded-xl border border-border bg-surface p-3">
+        <View className="mt-2.5 flex-row items-center justify-between rounded-xl border border-border bg-white p-3">
           <Text className="text-xs font-medium text-ink-soft">
             Updated Remaining Balance:
           </Text>
@@ -790,7 +790,7 @@ export function OrderEditView({
                 className={`rounded-xl border px-3.5 py-2.5 active:opacity-80 ${
                   isSelected
                     ? "border-brand bg-brand/10"
-                    : "border-border bg-surface"
+                    : "border-border bg-white"
                 }`}
               >
                 <Text
@@ -813,13 +813,13 @@ export function OrderEditView({
             Payment Receipt / Screenshot *
           </Text>
           {paymentScreenshot ? (
-            <View className="overflow-hidden rounded-xl border border-border bg-surface">
+            <View className="overflow-hidden rounded-xl border border-border bg-white">
               <Image
                 source={{ uri: paymentScreenshot.uri }}
                 className="h-44 w-full"
                 contentFit="contain"
               />
-              <View className="flex-row items-center justify-between border-t border-border bg-surface p-2.5">
+              <View className="flex-row items-center justify-between border-t border-border bg-white p-2.5">
                 <Text
                   numberOfLines={1}
                   className="mr-2 flex-1 text-xs text-ink-soft"
@@ -841,7 +841,7 @@ export function OrderEditView({
               <View className="flex-row gap-3">
                 <Pressable
                   onPress={handlePickImage}
-                  className="h-20 flex-1 flex-col items-center justify-center gap-1.5 rounded-xl border border-dashed border-border bg-surface active:bg-surface-soft"
+                  className="h-20 flex-1 flex-col items-center justify-center gap-1.5 rounded-xl border border-dashed border-border bg-white active:bg-neutral-50"
                 >
                   <ImageIcon size={20} color="#79726b" />
                   <Text className="text-xs font-medium text-ink-soft">
@@ -850,7 +850,7 @@ export function OrderEditView({
                 </Pressable>
                 <Pressable
                   onPress={handleTakePhoto}
-                  className="h-20 flex-1 flex-col items-center justify-center gap-1.5 rounded-xl border border-dashed border-border bg-surface active:bg-surface-soft"
+                  className="h-20 flex-1 flex-col items-center justify-center gap-1.5 rounded-xl border border-dashed border-border bg-white active:bg-neutral-50"
                 >
                   <Camera size={20} color="#79726b" />
                   <Text className="text-xs font-medium text-ink-soft">
@@ -887,7 +887,7 @@ export function OrderEditView({
           placeholderTextColor="#79726b"
           multiline
           numberOfLines={2}
-          className="min-h-[64px] rounded-xl border border-border bg-surface p-3 text-sm text-ink"
+          className="min-h-[64px] rounded-xl border border-border bg-white p-3 text-sm text-ink"
         />
       </View>
 
@@ -896,7 +896,7 @@ export function OrderEditView({
         <Pressable
           onPress={onCancel}
           disabled={isSaving}
-          className="h-12 flex-1 items-center justify-center rounded-xl border border-border bg-surface active:opacity-70"
+          className="h-12 flex-1 items-center justify-center rounded-xl border border-border bg-white active:opacity-70"
         >
           <Text className="text-sm font-semibold text-ink">Cancel</Text>
         </Pressable>

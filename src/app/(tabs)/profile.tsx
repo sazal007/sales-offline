@@ -66,14 +66,14 @@ export default function ProfileScreen() {
   };
 
   return (
-    <SafeAreaView edges={["top"]} className="flex-1 bg-surface">
+    <SafeAreaView edges={["top"]} className="flex-1 bg-white">
       <ScrollView
         className="flex-1 bg-background"
         contentContainerClassName="pb-10"
         showsVerticalScrollIndicator={false}
       >
         {/* Avatar + name banner */}
-        <View className="items-center border-b border-border bg-surface px-5 pb-8 pt-4">
+        <View className="items-center border-b border-border bg-white px-5 pb-8 pt-4">
           <View className="mb-4 h-20 w-20 items-center justify-center rounded-full bg-brand/10">
             <User size={36} color="#e8452c" />
           </View>
@@ -84,7 +84,7 @@ export default function ProfileScreen() {
         </View>
 
         {/* Info section */}
-        <View className="mx-5 mt-6 overflow-hidden rounded-2xl border border-border bg-surface">
+        <View className="mx-5 mt-6 overflow-hidden rounded-2xl border border-border bg-white">
         <Text className="border-b border-border px-4 py-3 text-[11px] font-bold uppercase tracking-wider text-ink-soft">
           Account Info
         </Text>
@@ -124,7 +124,7 @@ export default function ProfileScreen() {
       {(user?.distributor_name ||
         user?.franchise_name ||
         user?.factory_name) && (
-        <View className="mx-5 mt-4 overflow-hidden rounded-2xl border border-border bg-surface">
+        <View className="mx-5 mt-4 overflow-hidden rounded-2xl border border-border bg-white">
           <Text className="border-b border-border px-4 py-3 text-[11px] font-bold uppercase tracking-wider text-ink-soft">
             Assignment
           </Text>

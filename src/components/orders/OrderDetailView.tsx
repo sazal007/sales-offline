@@ -95,7 +95,7 @@ export function OrderDetailView({
   return (
     <View className="gap-4 pb-8">
       {/* 1. Customer & Store Info Card */}
-      <View className="rounded-2xl border border-border bg-surface p-4 shadow-sm">
+      <View className="rounded-2xl border border-border bg-white p-4">
         <View className="flex-row items-center justify-between">
           <View className="flex-1 flex-row items-center gap-3 pr-2">
             <View className="h-10 w-10 items-center justify-center rounded-xl bg-brand/10">
@@ -159,7 +159,7 @@ export function OrderDetailView({
         {/* 3-card row: Total, Paid, Balance */}
         <View className="flex-row gap-2.5">
           {/* Total Amount */}
-          <View className="flex-1 rounded-2xl border border-border bg-surface p-3 shadow-sm">
+          <View className="flex-1 rounded-2xl border border-border bg-white p-3">
             <Text className="text-[11px] font-medium text-ink-soft">Total</Text>
             <Text className="mt-1 text-base font-bold text-ink">
               {formatCurrency(totalAmount)}
@@ -167,7 +167,7 @@ export function OrderDetailView({
           </View>
 
           {/* Paid Amount */}
-          <View className="flex-1 rounded-2xl border border-border bg-surface p-3 shadow-sm">
+          <View className="flex-1 rounded-2xl border border-border bg-white p-3">
             <Text className="text-[11px] font-medium text-ink-soft">
               Paid
             </Text>
@@ -184,7 +184,7 @@ export function OrderDetailView({
               }
             }}
             disabled={remainingAmount <= 0 || order.order_status === "Cancelled"}
-            className="flex-1 rounded-2xl border border-border bg-surface p-3 shadow-sm active:opacity-80"
+            className="flex-1 rounded-2xl border border-border bg-white p-3 active:opacity-80"
           >
             <View className="flex-row items-center justify-between">
               <Text className="text-[11px] font-medium text-ink-soft">
@@ -206,7 +206,7 @@ export function OrderDetailView({
 
         {/* Progress Bar */}
         {totalAmount > 0 && (
-          <View className="mt-2.5 rounded-2xl border border-border bg-surface p-3.5 shadow-sm">
+          <View className="mt-2.5 rounded-2xl border border-border bg-white p-3.5">
             <View className="flex-row items-center justify-between">
               <Text className="text-xs font-semibold text-ink">
                 Payment Fulfillment
@@ -262,7 +262,7 @@ export function OrderDetailView({
           </Text>
         </View>
 
-        <View className="rounded-2xl border border-border bg-surface p-3.5 shadow-sm gap-2.5">
+        <View className="rounded-2xl border border-border bg-white p-3.5 gap-2.5">
           {order.items && order.items.length > 0 ? (
             order.items.map((it, idx) => (
               <View
@@ -283,7 +283,7 @@ export function OrderDetailView({
                   </View>
                 </View>
 
-                <View className="rounded-xl border border-border bg-surface px-3 py-1.5">
+                <View className="rounded-xl border border-border bg-white px-3 py-1.5">
                   <Text className="text-xs font-bold text-ink">
                     Qty: {it.quantity}
                   </Text>
@@ -312,7 +312,7 @@ export function OrderDetailView({
             {order.payment_history.map((ph, idx) => (
               <View
                 key={ph.id || idx}
-                className="rounded-2xl border border-border bg-surface p-4 shadow-sm"
+                className="rounded-2xl border border-border bg-white p-4"
               >
                 {/* Amount & Method Header */}
                 <View className="flex-row items-center justify-between">
@@ -372,7 +372,7 @@ export function OrderDetailView({
             ))}
           </View>
         ) : (
-          <View className="rounded-2xl border border-border bg-surface p-6 items-center justify-center">
+          <View className="rounded-2xl border border-border bg-white p-6 items-center justify-center">
             <CreditCard size={24} color="#79726b" />
             <Text className="mt-1 text-xs text-ink-soft">
               No payment transactions recorded yet
@@ -383,7 +383,7 @@ export function OrderDetailView({
 
       {/* 5. Remarks / Notes */}
       {Boolean(order.remarks) && (
-        <View className="rounded-2xl border border-border bg-surface p-3.5 shadow-sm">
+        <View className="rounded-2xl border border-border bg-white p-3.5">
           <View className="flex-row items-center gap-2">
             <FileText size={14} color="#79726b" />
             <Text className="text-xs font-bold uppercase tracking-wider text-ink-soft">

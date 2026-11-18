@@ -131,7 +131,7 @@ export default function CustomersScreen() {
         </View>
 
         {/* Search Bar */}
-        <View className="mt-3.5 flex-row items-center rounded-xl border border-border bg-surface px-3.5 py-2.5">
+        <View className="mt-3.5 flex-row items-center rounded-xl border border-border bg-white px-3.5 py-2.5">
           <Search size={16} color="#79726b" />
           <TextInput
             value={searchQuery}
@@ -168,7 +168,7 @@ export default function CustomersScreen() {
           </Text>
           <Pressable
             onPress={() => refetch()}
-            className="mt-4 rounded-xl border border-border bg-surface px-5 py-2.5 active:opacity-80"
+            className="mt-4 rounded-xl border border-border bg-white px-5 py-2.5 active:opacity-80"
           >
             <Text className="text-xs font-semibold text-ink">Retry</Text>
           </Pressable>
@@ -190,7 +190,7 @@ export default function CustomersScreen() {
             />
           }
           ListEmptyComponent={
-            <View className="mt-12 items-center justify-center rounded-2xl border border-dashed border-border bg-surface/50 px-6 py-14">
+            <View className="mt-12 items-center justify-center rounded-2xl border border-dashed border-border bg-white px-6 py-14">
               <View className="mb-3 h-12 w-12 items-center justify-center rounded-full bg-brand/10">
                 <Store size={22} color="#e8452c" />
               </View>

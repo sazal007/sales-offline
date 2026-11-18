@@ -18,7 +18,7 @@ export function OrderCard({ order, onPress, onEdit }: OrderCardProps) {
   return (
     <Pressable
       onPress={() => onPress(order)}
-      className="rounded-2xl border border-border bg-surface p-4 shadow-sm active:opacity-90"
+      className="rounded-2xl border border-border bg-white p-4 active:opacity-90"
     >
       {/* Header: Customer Details (Main Highlight) + Status & Edit Button */}
       <View className="flex-row items-start justify-between">
@@ -44,7 +44,7 @@ export function OrderCard({ order, onPress, onEdit }: OrderCardProps) {
               e.stopPropagation();
               onEdit(order);
             }}
-            className="h-7 w-7 items-center justify-center rounded-lg border border-border bg-surface-soft active:bg-brand/10"
+            className="h-7 w-7 items-center justify-center rounded-lg border border-border bg-white active:bg-brand/10"
             hitSlop={8}
           >
             <Edit2 size={12} color="#79726b" />
@@ -62,7 +62,7 @@ export function OrderCard({ order, onPress, onEdit }: OrderCardProps) {
       {/* Order Code & Items Count Row */}
       <View className="mt-2.5 flex-row items-center justify-between">
         <View className="flex-row items-center gap-1.5">
-          <View className="h-5 w-5 items-center justify-center rounded-md bg-surface-soft border border-border/70">
+          <View className="h-5 w-5 items-center justify-center rounded-md bg-white border border-border">
             <Package size={11} color="#79726b" />
           </View>
           <Text className="text-xs font-semibold text-ink-soft">

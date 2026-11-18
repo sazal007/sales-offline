@@ -136,7 +136,7 @@ export function DutyStatusToggle({ userRole }: DutyStatusToggleProps) {
     ? isInactive
       ? "bg-amber-50 border-amber-200"
       : "bg-emerald-50 border-emerald-200"
-    : "bg-surface border-border";
+    : "bg-white border-border";
 
   const statusLabel = isPending
     ? isLocating
@@ -159,7 +159,7 @@ export function DutyStatusToggle({ userRole }: DutyStatusToggleProps) {
       onPress={handlePress}
       disabled={isPending || isTrackingLoading}
       hitSlop={6}
-      className={`flex-row items-center gap-2 rounded-full border px-3 py-1.5 shadow-sm active:scale-95 ${pillBg}`}
+      className={`flex-row items-center gap-2 rounded-full border px-3 py-1.5 active:scale-95 ${pillBg}`}
     >
       {/* Status Dot / Live Beacon / Loading Spinner */}
       {isPending || isTrackingLoading ? (
@@ -198,7 +198,7 @@ export function DutyStatusToggle({ userRole }: DutyStatusToggleProps) {
             : "bg-border items-start"
         }`}
       >
-        <View className="h-3 w-3 rounded-full bg-white shadow-sm" />
+        <View className="h-3 w-3 rounded-full bg-white" />
       </View>
     </Pressable>
   );

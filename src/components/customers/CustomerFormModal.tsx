@@ -126,7 +126,7 @@ export function CustomerFormModal({
         className="flex-1 justify-end bg-black/50"
       >
         <Pressable className="flex-1" onPress={onClose} />
-        <View className="max-h-[88%] rounded-t-3xl border-t border-border bg-background pb-8 pt-5 shadow-2xl">
+        <View className="max-h-[88%] rounded-t-3xl border-t border-border bg-background pb-8 pt-5">
           {/* Modal Header */}
           <View className="flex-row items-center justify-between border-b border-border px-6 pb-4">
             <View>
@@ -141,7 +141,7 @@ export function CustomerFormModal({
             </View>
             <Pressable
               onPress={onClose}
-              className="h-8 w-8 items-center justify-center rounded-full bg-surface"
+              className="h-8 w-8 items-center justify-center rounded-full bg-white border border-border"
               hitSlop={8}
             >
               <X size={16} color="#79726b" />
@@ -182,7 +182,7 @@ export function CustomerFormModal({
                   }}
                   placeholder="e.g. Kathmandu Kirana Pasal"
                   placeholderTextColor="#79726b"
-                  className={`h-12 rounded-xl border bg-surface pl-11 pr-4 text-sm text-ink ${
+                  className={`h-12 rounded-xl border bg-white pl-11 pr-4 text-sm text-ink ${
                     formErrors.store_name ? "border-red-500" : "border-border"
                   }`}
                 />
@@ -215,7 +215,7 @@ export function CustomerFormModal({
                   }}
                   placeholder="e.g. Ram Bahadur Shrestha"
                   placeholderTextColor="#79726b"
-                  className={`h-12 rounded-xl border bg-surface pl-11 pr-4 text-sm text-ink ${
+                  className={`h-12 rounded-xl border bg-white pl-11 pr-4 text-sm text-ink ${
                     formErrors.contact_person
                       ? "border-red-500"
                       : "border-border"
@@ -251,7 +251,7 @@ export function CustomerFormModal({
                   placeholder="e.g. 9841234567"
                   placeholderTextColor="#79726b"
                   keyboardType="phone-pad"
-                  className={`h-12 rounded-xl border bg-surface pl-11 pr-4 text-sm text-ink ${
+                  className={`h-12 rounded-xl border bg-white pl-11 pr-4 text-sm text-ink ${
                     formErrors.phone_number ? "border-red-500" : "border-border"
                   }`}
                 />
@@ -291,7 +291,7 @@ export function CustomerFormModal({
                   placeholderTextColor="#79726b"
                   multiline
                   numberOfLines={3}
-                  className={`min-h-[80px] rounded-xl border bg-surface pb-3 pl-11 pr-4 pt-3.5 text-sm text-ink ${
+                  className={`min-h-[80px] rounded-xl border bg-white pb-3 pl-11 pr-4 pt-3.5 text-sm text-ink ${
                     formErrors.address ? "border-red-500" : "border-border"
                   }`}
                 />
@@ -308,7 +308,7 @@ export function CustomerFormModal({
               <Pressable
                 onPress={onClose}
                 disabled={isSubmitting}
-                className="h-12 flex-1 items-center justify-center rounded-xl border border-border bg-surface active:opacity-70"
+                className="h-12 flex-1 items-center justify-center rounded-xl border border-border bg-white active:opacity-70"
               >
                 <Text className="text-sm font-semibold text-ink">Cancel</Text>
               </Pressable>
