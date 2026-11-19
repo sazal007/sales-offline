@@ -8,9 +8,12 @@ import type {
   UpdateOfflineOrderPayload,
 } from "@/types/offlineSales";
 import { Edit2, PlusCircle, X } from "lucide-react-native";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Animated,
+  Dimensions,
+  Easing,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -36,6 +39,8 @@ interface OrderDetailModalProps {
   products?: Product[];
 }
 
+const SCREEN_HEIGHT = Dimensions.get("window").height;
+
 export function OrderDetailModal({
   visible,
   order,
@@ -50,33 +55,122 @@ export function OrderDetailModal({
   products,
 }: OrderDetailModalProps) {
   const [paymentModalVisible, setPaymentModalVisible] = useState(false);
+  const [rendered, setRendered] = useState(visible);
+  const isClosingRef = useRef(false);
+  const backdropAnim = useRef(new Animated.Value(0)).current;
+  const sheetAnim = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
+
+  const lastOrderRef = useRef(order);
+  if (order) {
+    lastOrderRef.current = order;
+  }
+  const displayOrder = order || lastOrderRef.current;
+
+  const handleClose = () => {
+    if (isClosingRef.current) return;
+    isClosingRef.current = true;
+    Animated.parallel([
+      Animated.timing(backdropAnim, {
+        toValue: 0,
+        duration: 180,
+        easing: Easing.in(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.timing(sheetAnim, {
+        toValue: SCREEN_HEIGHT,
+        duration: 220,
+        easing: Easing.in(Easing.cubic),
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      isClosingRef.current = false;
+      setRendered(false);
+      onClose();
+    });
+  };
+
+  const handleDismiss = () => {
+    if (isEditing) {
+      onCancelEdit();
+    } else {
+      handleClose();
+    }
+  };
+
+  useEffect(() => {
+    if (visible) {
+      isClosingRef.current = false;
+      setRendered(true);
+      backdropAnim.setValue(0);
+      sheetAnim.setValue(SCREEN_HEIGHT);
+      Animated.parallel([
+        Animated.timing(backdropAnim, {
+          toValue: 1,
+          duration: 240,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+        Animated.timing(sheetAnim, {
+          toValue: 0,
+          duration: 280,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+      ]).start();
+    } else if (rendered && !isClosingRef.current) {
+      isClosingRef.current = true;
+      Animated.parallel([
+        Animated.timing(backdropAnim, {
+          toValue: 0,
+          duration: 180,
+          easing: Easing.in(Easing.cubic),
+          useNativeDriver: true,
+        }),
+        Animated.timing(sheetAnim, {
+          toValue: SCREEN_HEIGHT,
+          duration: 220,
+          easing: Easing.in(Easing.cubic),
+          useNativeDriver: true,
+        }),
+      ]).start(() => {
+        isClosingRef.current = false;
+        setRendered(false);
+      });
+    }
+  }, [visible]);
 
   // Query fresh detail when modal is visible
   const { data: detailData, isLoading: isLoadingDetail } =
     useOfflineOrderDetailQuery(
-      visible && order?.order_code ? order.order_code : undefined,
+      visible && displayOrder?.order_code ? displayOrder.order_code : undefined,
     );
 
-  if (!order) return null;
+  if (!displayOrder && !rendered) return null;
 
-  const activeOrder = detailData || order;
+  const activeOrder = detailData || displayOrder!;
 
   return (
     <Modal
-      visible={visible}
-      animationType="slide"
+      visible={rendered}
+      animationType="none"
       transparent
-      onRequestClose={isEditing ? onCancelEdit : onClose}
+      onRequestClose={handleDismiss}
+      statusBarTranslucent
     >
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        className="flex-1 justify-end bg-black/50"
+        className="flex-1 justify-end"
       >
-        <Pressable
-          className="flex-1"
-          onPress={isEditing ? onCancelEdit : onClose}
+        <Animated.View
+          style={{ opacity: backdropAnim }}
+          className="absolute inset-0 bg-black/50"
+          pointerEvents="none"
         />
-        <View className="max-h-[90%] rounded-t-3xl border-t border-border bg-background pb-8 pt-5">
+        <Pressable className="flex-1" onPress={handleDismiss} />
+        <Animated.View
+          style={{ transform: [{ translateY: sheetAnim }] }}
+          className="max-h-[90%] rounded-t-3xl border-t border-border bg-background pb-8 pt-5"
+        >
           {/* Modal Header */}
           <View className="flex-row items-center justify-between border-b border-border px-6 pb-4">
             <View className="mr-3 flex-1">
@@ -126,7 +220,7 @@ export function OrderDetailModal({
                 </Pressable>
               )}
               <Pressable
-                onPress={isEditing ? onCancelEdit : onClose}
+                onPress={handleDismiss}
                 className="h-8 w-8 items-center justify-center rounded-full bg-white border border-border"
                 hitSlop={8}
               >
@@ -167,7 +261,7 @@ export function OrderDetailModal({
               />
             )}
           </ScrollView>
-        </View>
+        </Animated.View>
       </KeyboardAvoidingView>
 
       {/* Record Payment bottom-sheet */}

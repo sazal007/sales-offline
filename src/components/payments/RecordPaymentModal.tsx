@@ -1,9 +1,12 @@
 // src/components/payments/RecordPaymentModal.tsx
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Animated,
+  Dimensions,
+  Easing,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -63,6 +66,8 @@ const PAYMENT_METHODS: { value: OfflinePaymentMethod; label: string; icon: React
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
+const SCREEN_HEIGHT = Dimensions.get("window").height;
+
 export function RecordPaymentModal({
   visible,
   onClose,
@@ -73,6 +78,76 @@ export function RecordPaymentModal({
   customerOrders = [],
 }: RecordPaymentModalProps) {
   const mutation = useRecordOfflinePaymentMutation();
+
+  const [rendered, setRendered] = useState(visible);
+  const isClosingRef = useRef(false);
+  const backdropAnim = useRef(new Animated.Value(0)).current;
+  const sheetAnim = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
+
+  const handleClose = () => {
+    if (isClosingRef.current) return;
+    isClosingRef.current = true;
+    Animated.parallel([
+      Animated.timing(backdropAnim, {
+        toValue: 0,
+        duration: 180,
+        easing: Easing.in(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.timing(sheetAnim, {
+        toValue: SCREEN_HEIGHT,
+        duration: 220,
+        easing: Easing.in(Easing.cubic),
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      isClosingRef.current = false;
+      setRendered(false);
+      onClose();
+    });
+  };
+
+  useEffect(() => {
+    if (visible) {
+      isClosingRef.current = false;
+      setRendered(true);
+      backdropAnim.setValue(0);
+      sheetAnim.setValue(SCREEN_HEIGHT);
+      Animated.parallel([
+        Animated.timing(backdropAnim, {
+          toValue: 1,
+          duration: 240,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+        Animated.timing(sheetAnim, {
+          toValue: 0,
+          duration: 280,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+      ]).start();
+    } else if (rendered && !isClosingRef.current) {
+      isClosingRef.current = true;
+      Animated.parallel([
+        Animated.timing(backdropAnim, {
+          toValue: 0,
+          duration: 180,
+          easing: Easing.in(Easing.cubic),
+          useNativeDriver: true,
+        }),
+        Animated.timing(sheetAnim, {
+          toValue: SCREEN_HEIGHT,
+          duration: 220,
+          easing: Easing.in(Easing.cubic),
+          useNativeDriver: true,
+        }),
+      ]).start(() => {
+        isClosingRef.current = false;
+        setRendered(false);
+      });
+    }
+  }, [visible]);
 
   // Form state
   const [amount, setAmount] = useState("");
@@ -243,7 +318,7 @@ export function RecordPaymentModal({
     try {
       await mutation.mutateAsync(payload);
       Alert.alert("Payment Recorded", `Rs. ${parsedAmount.toLocaleString()} has been recorded successfully.`);
-      onClose();
+      handleClose();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Failed to record payment.";
       Alert.alert("Error", msg);
@@ -252,18 +327,27 @@ export function RecordPaymentModal({
 
   return (
     <Modal
-      visible={visible}
-      animationType="slide"
+      visible={rendered}
+      animationType="none"
       transparent
-      onRequestClose={onClose}
+      onRequestClose={handleClose}
+      statusBarTranslucent
     >
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        className="flex-1 justify-end bg-black/50"
+        className="flex-1 justify-end"
       >
-        <Pressable className="flex-1" onPress={onClose} />
+        <Animated.View
+          style={{ opacity: backdropAnim }}
+          className="absolute inset-0 bg-black/50"
+          pointerEvents="none"
+        />
+        <Pressable className="flex-1" onPress={handleClose} />
 
-        <View className="max-h-[88%] rounded-t-3xl border-t border-border bg-background pb-10">
+        <Animated.View
+          style={{ transform: [{ translateY: sheetAnim }] }}
+          className="max-h-[88%] rounded-t-3xl border-t border-border bg-background pb-10"
+        >
           {/* Header */}
           <View className="flex-row items-center justify-between border-b border-border px-5 py-4">
             <View>
@@ -277,7 +361,7 @@ export function RecordPaymentModal({
               </Text>
             </View>
             <Pressable
-              onPress={onClose}
+              onPress={handleClose}
               hitSlop={8}
               className="h-8 w-8 items-center justify-center rounded-full bg-white border border-border"
             >
@@ -589,7 +673,7 @@ export function RecordPaymentModal({
 
             </View>
           </ScrollView>
-        </View>
+        </Animated.View>
       </KeyboardAvoidingView>
     </Modal>
   );

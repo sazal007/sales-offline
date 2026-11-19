@@ -1,16 +1,19 @@
 // src/components/customers/CustomerFormModal.tsx
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
-  Modal,
+  ActivityIndicator,
+  Animated,
+  Dimensions,
+  Easing,
   KeyboardAvoidingView,
+  Modal,
   Platform,
   Pressable,
-  View,
-  Text,
   ScrollView,
+  Text,
   TextInput,
-  ActivityIndicator,
+  View,
 } from "react-native";
 import {
   X,
@@ -32,11 +35,83 @@ interface CustomerFormModalProps {
   onClose: () => void;
 }
 
+const SCREEN_HEIGHT = Dimensions.get("window").height;
+
 export function CustomerFormModal({
   visible,
   editingCustomer,
   onClose,
 }: CustomerFormModalProps) {
+  const [rendered, setRendered] = useState(visible);
+  const isClosingRef = useRef(false);
+  const backdropAnim = useRef(new Animated.Value(0)).current;
+  const sheetAnim = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
+
+  const handleClose = () => {
+    if (isClosingRef.current) return;
+    isClosingRef.current = true;
+    Animated.parallel([
+      Animated.timing(backdropAnim, {
+        toValue: 0,
+        duration: 180,
+        easing: Easing.in(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.timing(sheetAnim, {
+        toValue: SCREEN_HEIGHT,
+        duration: 220,
+        easing: Easing.in(Easing.cubic),
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      isClosingRef.current = false;
+      setRendered(false);
+      onClose();
+    });
+  };
+
+  useEffect(() => {
+    if (visible) {
+      isClosingRef.current = false;
+      setRendered(true);
+      backdropAnim.setValue(0);
+      sheetAnim.setValue(SCREEN_HEIGHT);
+      Animated.parallel([
+        Animated.timing(backdropAnim, {
+          toValue: 1,
+          duration: 240,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+        Animated.timing(sheetAnim, {
+          toValue: 0,
+          duration: 280,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+      ]).start();
+    } else if (rendered && !isClosingRef.current) {
+      isClosingRef.current = true;
+      Animated.parallel([
+        Animated.timing(backdropAnim, {
+          toValue: 0,
+          duration: 180,
+          easing: Easing.in(Easing.cubic),
+          useNativeDriver: true,
+        }),
+        Animated.timing(sheetAnim, {
+          toValue: SCREEN_HEIGHT,
+          duration: 220,
+          easing: Easing.in(Easing.cubic),
+          useNativeDriver: true,
+        }),
+      ]).start(() => {
+        isClosingRef.current = false;
+        setRendered(false);
+      });
+    }
+  }, [visible]);
+
   const [storeName, setStoreName] = useState("");
   const [contactPerson, setContactPerson] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
@@ -104,7 +179,7 @@ export function CustomerFormModal({
       } else {
         await createMutation.mutateAsync(payload);
       }
-      onClose();
+      handleClose();
     } catch (err: unknown) {
       const msg =
         err instanceof Error
@@ -116,17 +191,26 @@ export function CustomerFormModal({
 
   return (
     <Modal
-      visible={visible}
-      animationType="slide"
+      visible={rendered}
+      animationType="none"
       transparent
-      onRequestClose={onClose}
+      onRequestClose={handleClose}
+      statusBarTranslucent
     >
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        className="flex-1 justify-end bg-black/50"
+        className="flex-1 justify-end"
       >
-        <Pressable className="flex-1" onPress={onClose} />
-        <View className="max-h-[88%] rounded-t-3xl border-t border-border bg-background pb-8 pt-5">
+        <Animated.View
+          style={{ opacity: backdropAnim }}
+          className="absolute inset-0 bg-black/50"
+          pointerEvents="none"
+        />
+        <Pressable className="flex-1" onPress={handleClose} />
+        <Animated.View
+          style={{ transform: [{ translateY: sheetAnim }] }}
+          className="max-h-[88%] rounded-t-3xl border-t border-border bg-background pb-8 pt-5"
+        >
           {/* Modal Header */}
           <View className="flex-row items-center justify-between border-b border-border px-6 pb-4">
             <View>
@@ -140,7 +224,7 @@ export function CustomerFormModal({
               </Text>
             </View>
             <Pressable
-              onPress={onClose}
+              onPress={handleClose}
               className="h-8 w-8 items-center justify-center rounded-full bg-white border border-border"
               hitSlop={8}
             >
@@ -306,7 +390,7 @@ export function CustomerFormModal({
             {/* Action Buttons */}
             <View className="flex-row items-center gap-3 pb-6">
               <Pressable
-                onPress={onClose}
+                onPress={handleClose}
                 disabled={isSubmitting}
                 className="h-12 flex-1 items-center justify-center rounded-xl border border-border bg-white active:opacity-70"
               >
@@ -328,7 +412,7 @@ export function CustomerFormModal({
               </Pressable>
             </View>
           </ScrollView>
-        </View>
+        </Animated.View>
       </KeyboardAvoidingView>
     </Modal>
   );

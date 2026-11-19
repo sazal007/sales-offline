@@ -1,9 +1,12 @@
 // src/components/attendance/AttendanceModal.tsx
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Animated,
+  Dimensions,
+  Easing,
   Image,
   KeyboardAvoidingView,
   Modal,
@@ -36,6 +39,8 @@ interface AttendanceModalProps {
   onSuccess?: () => void;
 }
 
+const SCREEN_HEIGHT = Dimensions.get("window").height;
+
 export function AttendanceModal({
   visible,
   onClose,
@@ -43,6 +48,76 @@ export function AttendanceModal({
 }: AttendanceModalProps) {
   const { data: config } = useAttendanceConfigQuery(visible);
   const postMutation = usePostAttendanceMutation();
+
+  const [rendered, setRendered] = useState(visible);
+  const isClosingRef = useRef(false);
+  const backdropAnim = useRef(new Animated.Value(0)).current;
+  const sheetAnim = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
+
+  const handleClose = () => {
+    if (isClosingRef.current) return;
+    isClosingRef.current = true;
+    Animated.parallel([
+      Animated.timing(backdropAnim, {
+        toValue: 0,
+        duration: 180,
+        easing: Easing.in(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.timing(sheetAnim, {
+        toValue: SCREEN_HEIGHT,
+        duration: 220,
+        easing: Easing.in(Easing.cubic),
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      isClosingRef.current = false;
+      setRendered(false);
+      onClose();
+    });
+  };
+
+  useEffect(() => {
+    if (visible) {
+      isClosingRef.current = false;
+      setRendered(true);
+      backdropAnim.setValue(0);
+      sheetAnim.setValue(SCREEN_HEIGHT);
+      Animated.parallel([
+        Animated.timing(backdropAnim, {
+          toValue: 1,
+          duration: 240,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+        Animated.timing(sheetAnim, {
+          toValue: 0,
+          duration: 280,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+      ]).start();
+    } else if (rendered && !isClosingRef.current) {
+      isClosingRef.current = true;
+      Animated.parallel([
+        Animated.timing(backdropAnim, {
+          toValue: 0,
+          duration: 180,
+          easing: Easing.in(Easing.cubic),
+          useNativeDriver: true,
+        }),
+        Animated.timing(sheetAnim, {
+          toValue: SCREEN_HEIGHT,
+          duration: 220,
+          easing: Easing.in(Easing.cubic),
+          useNativeDriver: true,
+        }),
+      ]).start(() => {
+        isClosingRef.current = false;
+        setRendered(false);
+      });
+    }
+  }, [visible]);
 
   // Form states — all fields are strictly required
   const [imageUri, setImageUri] = useState<string | null>(null);
@@ -203,7 +278,7 @@ export function AttendanceModal({
 
       Alert.alert("Success", "Daily attendance posted successfully!");
       onSuccess?.();
-      onClose();
+      handleClose();
     } catch (err: unknown) {
       const msg =
         err instanceof Error ? err.message : "Failed to post attendance.";
@@ -225,18 +300,27 @@ export function AttendanceModal({
 
   return (
     <Modal
-      visible={visible}
-      animationType="slide"
+      visible={rendered}
+      animationType="none"
       transparent
-      onRequestClose={onClose}
+      onRequestClose={handleClose}
+      statusBarTranslucent
     >
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        className="flex-1 justify-end bg-black/50"
+        className="flex-1 justify-end"
       >
-        <Pressable className="flex-1" onPress={onClose} />
+        <Animated.View
+          style={{ opacity: backdropAnim }}
+          className="absolute inset-0 bg-black/50"
+          pointerEvents="none"
+        />
+        <Pressable className="flex-1" onPress={handleClose} />
 
-        <View className="max-h-[90%] rounded-t-3xl border-t border-border bg-background pb-8">
+        <Animated.View
+          style={{ transform: [{ translateY: sheetAnim }] }}
+          className="max-h-[90%] rounded-t-3xl border-t border-border bg-background pb-8"
+        >
           {/* Header */}
           <View className="flex-row items-center justify-between border-b border-border px-5 py-4">
             <View>
@@ -253,7 +337,7 @@ export function AttendanceModal({
               )}
             </View>
             <Pressable
-              onPress={onClose}
+              onPress={handleClose}
               hitSlop={8}
               className="h-8 w-8 items-center justify-center rounded-full bg-white border border-border"
             >
@@ -430,9 +514,8 @@ export function AttendanceModal({
               </Pressable>
             </View>
           </ScrollView>
-        </View>
+        </Animated.View>
       </KeyboardAvoidingView>
     </Modal>
   );
 }
-
