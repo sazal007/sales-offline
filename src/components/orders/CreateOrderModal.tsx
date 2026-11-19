@@ -717,14 +717,6 @@ export function CreateOrderModal({
                       : "border-border bg-white"
                   }`}
                 >
-                  <Calendar
-                    size={14}
-                    color={
-                      orderDate === new Date().toISOString().split("T")[0]
-                        ? "#e8452c"
-                        : "#79726b"
-                    }
-                  />
                   <Text
                     className={`text-xs font-semibold ${
                       orderDate === new Date().toISOString().split("T")[0]
@@ -781,6 +773,19 @@ export function CreateOrderModal({
                       : "border-border bg-white"
                   }`}
                 >
+                  <Calendar
+                    size={14}
+                    color={
+                      showDatePicker ||
+                      (orderDate !== new Date().toISOString().split("T")[0] &&
+                        orderDate !==
+                          new Date(Date.now() - 86400000)
+                            .toISOString()
+                            .split("T")[0])
+                        ? "#e8452c"
+                        : "#79726b"
+                    }
+                  />
                   <Text
                     className={`text-xs font-semibold ${
                       showDatePicker ||
