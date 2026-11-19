@@ -1,41 +1,8 @@
 // src/components/orders/CreateOrderModal.tsx
 
-import React, { useMemo, useState, useEffect } from "react";
-import {
-  Modal,
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  View,
-  Text,
-  ScrollView,
-  TextInput,
-  ActivityIndicator,
-  Alert,
-  Switch,
-} from "react-native";
-import { Image } from "expo-image";
-import * as ImagePicker from "expo-image-picker";
-import DateTimePicker, {
-  type DateTimePickerEvent,
-} from "@react-native-community/datetimepicker";
-import {
-  X,
-  Store,
-  ChevronDown,
-  CheckCircle2,
-  Calendar,
-  Package,
-  Plus,
-  Trash2,
-  Minus,
-  Search,
-  DollarSign,
-  ImageIcon,
-  Camera,
-  RefreshCw,
-  AlertCircle,
-} from "lucide-react-native";
+import { useCustomersQuery } from "@/hooks/useCustomerQueries";
+import { useDebounce } from "@/hooks/useDebounce";
+import { useCreateOfflineOrderMutation } from "@/hooks/useOfflineOrderQueries";
 import type { OfflineCustomer } from "@/types/customer";
 import type {
   CreateOfflineOrderPayload,
@@ -43,9 +10,42 @@ import type {
   OfflinePaymentMethod,
   Product,
 } from "@/types/offlineSales";
-import { useCreateOfflineOrderMutation } from "@/hooks/useOfflineOrderQueries";
-import { useCustomersQuery } from "@/hooks/useCustomerQueries";
-import { useDebounce } from "@/hooks/useDebounce";
+import DateTimePicker, {
+  type DateTimePickerEvent,
+} from "@react-native-community/datetimepicker";
+import { Image } from "expo-image";
+import * as ImagePicker from "expo-image-picker";
+import {
+  AlertCircle,
+  Calendar,
+  Camera,
+  CheckCircle2,
+  ChevronDown,
+  DollarSign,
+  ImageIcon,
+  Minus,
+  Package,
+  Plus,
+  RefreshCw,
+  Search,
+  Store,
+  Trash2,
+  X,
+} from "lucide-react-native";
+import { useEffect, useMemo, useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  Pressable,
+  ScrollView,
+  Switch,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
 import { PAYMENT_METHODS, type SelectedOrderItem } from "./orderHelpers";
 
 interface CreateOrderModalProps {
@@ -68,10 +68,8 @@ export function CreateOrderModal({
   const [customerSearch, setCustomerSearch] = useState("");
   const debouncedCustomerSearch = useDebounce(customerSearch, 300);
 
-  const {
-    data: fetchedCustomers = [],
-    isLoading: isSearchingCustomers,
-  } = useCustomersQuery(debouncedCustomerSearch);
+  const { data: fetchedCustomers = [], isLoading: isSearchingCustomers } =
+    useCustomersQuery(debouncedCustomerSearch);
 
   const displayedCustomers = debouncedCustomerSearch.trim()
     ? fetchedCustomers
@@ -405,14 +403,16 @@ export function CreateOrderModal({
       customer: Number(selectedCustomerId),
       order_date: orderDate,
       total_amount: totalAmount.trim(),
-      paid_amount: isPrePaid ? (paidAmount.trim() || "0.00") : "0.00",
+      paid_amount: isPrePaid ? paidAmount.trim() || "0.00" : "0.00",
       payment_method: isPrePaid ? paymentMethod : "cash",
       remarks: remarks.trim() || undefined,
       items: items.map((it) => ({
         inventory_id: Number(it.inventory_id),
         quantity: Number(it.quantity),
       })),
-      ...(isPrePaid && paymentScreenshot ? { payment_screenshot: paymentScreenshot } : {}),
+      ...(isPrePaid && paymentScreenshot
+        ? { payment_screenshot: paymentScreenshot }
+        : {}),
     };
 
     try {
@@ -420,8 +420,7 @@ export function CreateOrderModal({
       onSuccess?.(created);
       onClose();
     } catch (err: unknown) {
-      const msg =
-        err instanceof Error ? err.message : "Failed to place order.";
+      const msg = err instanceof Error ? err.message : "Failed to place order.";
       setApiError(msg);
     }
   };
@@ -507,7 +506,9 @@ export function CreateOrderModal({
                   size={16}
                   color="#79726b"
                   style={{
-                    transform: [{ rotate: customerPickerOpen ? "180deg" : "0deg" }],
+                    transform: [
+                      { rotate: customerPickerOpen ? "180deg" : "0deg" },
+                    ],
                   }}
                 />
               </Pressable>
@@ -545,7 +546,9 @@ export function CreateOrderModal({
                     {isSearchingCustomers ? (
                       <View className="py-4 items-center">
                         <ActivityIndicator size="small" color="#e8452c" />
-                        <Text className="mt-1.5 text-[11px] text-ink-soft">Searching...</Text>
+                        <Text className="mt-1.5 text-[11px] text-ink-soft">
+                          Searching...
+                        </Text>
                       </View>
                     ) : displayedCustomers.length === 0 ? (
                       <View className="p-3 items-center">
@@ -670,7 +673,9 @@ export function CreateOrderModal({
                   <Text
                     className={`text-xs font-semibold ${
                       orderDate ===
-                      new Date(Date.now() - 86400000).toISOString().split("T")[0]
+                      new Date(Date.now() - 86400000)
+                        .toISOString()
+                        .split("T")[0]
                         ? "text-brand"
                         : "text-ink-soft"
                     }`}
@@ -721,7 +726,9 @@ export function CreateOrderModal({
                         onPress={() => setShowDatePicker(false)}
                         className="rounded-lg bg-brand px-3 py-1"
                       >
-                        <Text className="text-xs font-bold text-white">Done</Text>
+                        <Text className="text-xs font-bold text-white">
+                          Done
+                        </Text>
                       </Pressable>
                     </View>
                     <DateTimePicker
@@ -850,16 +857,16 @@ export function CreateOrderModal({
 
                         {it.product && (
                           <View className="mt-1.5 flex-row items-center gap-2">
-                            <View className="rounded bg-border/40 px-1.5 py-0.5">
+                            {/* <View className="rounded bg-border/40 px-1.5 py-0.5">
                               <Text className="text-[10px] font-bold text-ink-soft">
                                 ID:{" "}
                                 {it.product.inventory_id ??
                                   it.product.product_id}
                               </Text>
-                            </View>
+                            </View> */}
                             {Boolean(
                               it.product.total_amount &&
-                                it.product.total_amount > 0,
+                              it.product.total_amount > 0,
                             ) && (
                               <Text className="text-xs font-semibold text-brand">
                                 Rs.{" "}
@@ -926,9 +933,7 @@ export function CreateOrderModal({
                               return (
                                 <Pressable
                                   key={prod.inventory_id ?? prod.product_id}
-                                  onPress={() =>
-                                    handleSelectProduct(idx, prod)
-                                  }
+                                  onPress={() => handleSelectProduct(idx, prod)}
                                   className={`flex-row items-center justify-between rounded-lg p-2 mb-1 border ${
                                     isSelected
                                       ? "border-brand/40 bg-brand/10"
@@ -947,12 +952,12 @@ export function CreateOrderModal({
                                       >
                                         {prod.product_name}
                                       </Text>
-                                      <View className="rounded bg-border/50 px-1 py-0.2">
+                                      {/* <View className="rounded bg-border/50 px-1 py-0.2">
                                         <Text className="text-[9px] font-semibold text-ink-soft">
                                           ID:{" "}
                                           {prod.inventory_id ?? prod.product_id}
                                         </Text>
-                                      </View>
+                                      </View> */}
                                     </View>
 
                                     <View className="mt-1 flex-row items-center gap-2">
@@ -976,7 +981,7 @@ export function CreateOrderModal({
 
                                       {Boolean(
                                         prod.total_amount &&
-                                          prod.total_amount > 0,
+                                        prod.total_amount > 0,
                                       ) && (
                                         <Text className="text-[11px] font-semibold text-brand">
                                           Rs.{" "}
@@ -1007,7 +1012,7 @@ export function CreateOrderModal({
                         </Text>
                         {Boolean(
                           it.product?.total_amount &&
-                            it.product.total_amount > 0,
+                          it.product.total_amount > 0,
                         ) && (
                           <Text className="text-xs font-bold text-ink mt-0.5">
                             Subtotal: Rs.{" "}
@@ -1115,9 +1120,7 @@ export function CreateOrderModal({
                   placeholderTextColor="#79726b"
                   keyboardType="numeric"
                   className={`h-11 rounded-xl border bg-white px-3 text-sm font-bold text-ink ${
-                    formErrors.total_amount
-                      ? "border-red-500"
-                      : "border-border"
+                    formErrors.total_amount ? "border-red-500" : "border-border"
                   }`}
                 />
                 {Boolean(formErrors.total_amount) && (
@@ -1142,7 +1145,6 @@ export function CreateOrderModal({
                   className="min-h-[60px] rounded-xl border border-border bg-white p-3 text-xs text-ink"
                 />
               </View>
-
             </View>
 
             {/* 5. Pre-paid Toggle & Prepayment Section (At the last) */}
@@ -1151,9 +1153,7 @@ export function CreateOrderModal({
               <View className="flex-row items-center justify-between">
                 <View className="flex-1 pr-3">
                   <View className="flex-row items-center gap-1.5">
-                    <Text className="text-sm font-bold text-ink">
-                      Pre-paid
-                    </Text>
+                    <Text className="text-sm font-bold text-ink">Pre-paid</Text>
                     {isPrePaid && (
                       <View className="rounded bg-emerald-50 px-1.5 py-0.2 border border-emerald-200">
                         <Text className="text-[9px] font-bold text-emerald-700">
@@ -1188,7 +1188,7 @@ export function CreateOrderModal({
                       </Text>
                       {Boolean(
                         totalAmount &&
-                          parseFloat(paidAmount) !== parseFloat(totalAmount),
+                        parseFloat(paidAmount) !== parseFloat(totalAmount),
                       ) && (
                         <Pressable
                           onPress={() => setPaidAmount(totalAmount)}
