@@ -59,6 +59,7 @@ export function usePostAttendanceMutation() {
   return useMutation({
     mutationFn: (payload: PostAttendancePayload) => postAttendance(payload),
     onSuccess: () => {
+      queryClient.setQueryData(ATTENDANCE_TODAY_KEY, { attendance: true });
       queryClient.invalidateQueries({ queryKey: ATTENDANCE_TODAY_KEY });
       queryClient.invalidateQueries({ queryKey: ["attendance"] });
     },

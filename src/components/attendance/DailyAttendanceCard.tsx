@@ -11,9 +11,13 @@ import { AttendanceModal } from "./AttendanceModal";
 
 interface DailyAttendanceCardProps {
   userRole?: string;
+  onPress?: () => void;
 }
 
-export function DailyAttendanceCard({ userRole }: DailyAttendanceCardProps) {
+export function DailyAttendanceCard({
+  userRole,
+  onPress,
+}: DailyAttendanceCardProps) {
   const isSalesPerson =
     userRole === "Offline_SalesPerson" || userRole === "SalesPerson";
 
@@ -50,10 +54,18 @@ export function DailyAttendanceCard({ userRole }: DailyAttendanceCardProps) {
     return `${hour12}:${m} ${ampm}`;
   })();
 
+  const handlePress = () => {
+    if (onPress) {
+      onPress();
+    } else {
+      setModalVisible(true);
+    }
+  };
+
   return (
     <>
       <Pressable
-        onPress={() => setModalVisible(true)}
+        onPress={handlePress}
         className="rounded-2xl border border-border bg-background p-4 active:opacity-85"
       >
         <View className="flex-row items-center justify-between">
@@ -80,11 +92,13 @@ export function DailyAttendanceCard({ userRole }: DailyAttendanceCardProps) {
         </View>
       </Pressable>
 
-      {/* Attendance Submission Modal */}
-      <AttendanceModal
-        visible={modalVisible}
-        onClose={() => setModalVisible(false)}
-      />
+      {/* Attendance Submission Modal (used if not controlled from parent) */}
+      {!onPress && (
+        <AttendanceModal
+          visible={modalVisible}
+          onClose={() => setModalVisible(false)}
+        />
+      )}
     </>
   );
 }

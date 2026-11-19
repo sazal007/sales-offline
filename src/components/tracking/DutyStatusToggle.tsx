@@ -22,9 +22,13 @@ import {
 
 interface DutyStatusToggleProps {
   userRole?: string;
+  onToggledOnline?: () => void;
 }
 
-export function DutyStatusToggle({ userRole }: DutyStatusToggleProps) {
+export function DutyStatusToggle({
+  userRole,
+  onToggledOnline,
+}: DutyStatusToggleProps) {
   const isSalesPerson =
     userRole === "Offline_SalesPerson" || userRole === "SalesPerson";
 
@@ -36,98 +40,87 @@ export function DutyStatusToggle({ userRole }: DutyStatusToggleProps) {
   const toggleMutation = useToggleTrackingMutation();
   const pingMutation = useSendLocationPingMutation();
 
-  const [isLocating, setIsLocating] = useState(false);
+  const [optimisticOnline, setOptimisticOnline] = useState<boolean | null>(null);
 
   if (!isSalesPerson) {
     return null;
   }
 
-  const isOnline = Boolean(tracking?.is_online);
-  const isInactive = tracking?.tracking_status === "INACTIVE";
-  const isPending =
-    isLocating || toggleMutation.isPending || pingMutation.isPending;
+  const serverOnline = Boolean(tracking?.is_online);
+  const isOnline = optimisticOnline !== null ? optimisticOnline : serverOnline;
+  const isInactive = tracking?.tracking_status === "INACTIVE" && isOnline;
 
-  const performToggle = async (turnOnline: boolean) => {
-    try {
-      if (turnOnline) {
-        setIsLocating(true);
-        try {
-          // 1. Foreground permission
-          const { status } = await Location.requestForegroundPermissionsAsync();
-          if (status !== "granted") {
-            Alert.alert(
-              "Location Permission Required",
-              "Please allow location access to start your field duty shift.",
-            );
-            return;
-          }
+  const handlePress = async () => {
+    if (toggleMutation.isPending) return;
 
-          // 2. Get initial position and ping
-          const position = await Location.getCurrentPositionAsync({
-            accuracy:
-              Platform.OS === "android"
-                ? Location.Accuracy.Balanced
-                : Location.Accuracy.High,
-          });
+    const nextOnline = !isOnline;
+    // 1. Instant optimistic state update
+    setOptimisticOnline(nextOnline);
 
-          const { latitude, longitude, accuracy } = position.coords;
+    if (nextOnline) {
+      // 2. Instantly notify parent so attendance modal opens without waiting
+      onToggledOnline?.();
 
-          await pingMutation.mutateAsync({
-            latitude,
-            longitude,
-            accuracy: accuracy ? Math.round(accuracy * 10) / 10 : 5.0,
-            recorded_at: new Date(position.timestamp).toISOString(),
-          });
-        } catch {
-          console.warn("Could not capture initial GPS position");
-        } finally {
-          setIsLocating(false);
-        }
-
-        // 3. Toggle online status on backend
-        await toggleMutation.mutateAsync({ is_online: true });
-
-        // 4. Start background location task (requests "Always" permission)
-        const bgStarted = await startBackgroundLocationTracking();
-        if (!bgStarted) {
-          Alert.alert(
-            "Background Location Unavailable",
-            "Duty shift is active but background location tracking is off. " +
-              "Go to Settings → App → Location and choose \"Always\" to enable it.",
-            [{ text: "OK" }],
-          );
-        }
-      } else {
-        // 5. Stop background task first, then toggle offline
-        await stopBackgroundLocationTracking();
-        await toggleMutation.mutateAsync({ is_online: false });
-      }
-    } catch (err: unknown) {
-      const msg =
-        err instanceof Error ? err.message : "Failed to update duty status.";
-      Alert.alert("Error", msg);
-    }
-  };
-
-  const handlePress = () => {
-    if (isPending || isTrackingLoading) return;
-
-    if (isOnline) {
-      // Confirm before going offline to prevent accidental tap
-      Alert.alert(
-        "End Duty Shift?",
-        "Going offline will pause your live location tracking.",
-        [
-          { text: "Keep Online", style: "cancel" },
-          {
-            text: "Go Offline",
-            style: "destructive",
-            onPress: () => performToggle(false),
+      // 3. Fire online mutation
+      toggleMutation.mutate(
+        { is_online: true },
+        {
+          onError: (err: unknown) => {
+            setOptimisticOnline(null);
+            const msg =
+              err instanceof Error ? err.message : "Failed to go online.";
+            Alert.alert("Error", msg);
           },
-        ],
+          onSettled: () => {
+            setOptimisticOnline(null);
+          },
+        },
       );
+
+      // 4. Non-blocking fast background GPS capture and tracking start
+      void (async () => {
+        try {
+          const { status } = await Location.getForegroundPermissionsAsync();
+          if (status === "granted") {
+            let position = await Location.getLastKnownPositionAsync().catch(() => null);
+            if (!position) {
+              position = await Location.getCurrentPositionAsync({
+                accuracy: Location.Accuracy.Balanced,
+              }).catch(() => null);
+            }
+            if (position) {
+              const { latitude, longitude, accuracy } = position.coords;
+              pingMutation.mutate({
+                latitude,
+                longitude,
+                accuracy: accuracy ? Math.round(accuracy * 10) / 10 : 5.0,
+                recorded_at: new Date(position.timestamp).toISOString(),
+              });
+            }
+          }
+          startBackgroundLocationTracking().catch(() => {});
+        } catch {
+          // Silent fallback: foreground ping interval in useTrackingQueries will handle it
+        }
+      })();
     } else {
-      performToggle(true);
+      // 5. Offline switch (instant)
+      toggleMutation.mutate(
+        { is_online: false },
+        {
+          onError: (err: unknown) => {
+            setOptimisticOnline(null);
+            const msg =
+              err instanceof Error ? err.message : "Failed to go offline.";
+            Alert.alert("Error", msg);
+          },
+          onSettled: () => {
+            setOptimisticOnline(null);
+          },
+        },
+      );
+
+      void stopBackgroundLocationTracking().catch(() => {});
     }
   };
 
@@ -138,15 +131,11 @@ export function DutyStatusToggle({ userRole }: DutyStatusToggleProps) {
       : "bg-emerald-50 border-emerald-200"
     : "bg-white border-border";
 
-  const statusLabel = isPending
-    ? isLocating
-      ? "Locating..."
-      : "Updating..."
-    : isOnline
-      ? isInactive
-        ? "No Signal"
-        : "Online"
-      : "Offline";
+  const statusLabel = isOnline
+    ? isInactive
+      ? "No Signal"
+      : "Online"
+    : "Offline";
 
   const textColor = isOnline
     ? isInactive
@@ -157,15 +146,14 @@ export function DutyStatusToggle({ userRole }: DutyStatusToggleProps) {
   return (
     <Pressable
       onPress={handlePress}
-      disabled={isPending || isTrackingLoading}
       hitSlop={6}
       className={`flex-row items-center gap-2 rounded-full border px-3 py-1.5 active:scale-95 ${pillBg}`}
     >
-      {/* Status Dot / Live Beacon / Loading Spinner */}
-      {isPending || isTrackingLoading ? (
+      {/* Status Dot / Live Beacon / Initial Loading Spinner */}
+      {isTrackingLoading && tracking === undefined ? (
         <ActivityIndicator
           size="small"
-          color={isOnline ? "#059669" : "#79726b"}
+          color="#79726b"
           style={{ width: 14, height: 14 }}
         />
       ) : isOnline ? (

@@ -125,7 +125,12 @@ export function useToggleTrackingMutation() {
   return useMutation({
     mutationFn: (payload: SalespersonToggleOnlinePayload) =>
       toggleTrackingStatus(payload),
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
+      queryClient.setQueryData(MY_TRACKING_KEY, (old: any) =>
+        old
+          ? { ...old, is_online: variables.is_online }
+          : { is_online: variables.is_online },
+      );
       queryClient.invalidateQueries({ queryKey: MY_TRACKING_KEY });
     },
   });

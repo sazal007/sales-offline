@@ -2,8 +2,14 @@
 
 import { useAuth } from "@/context/AuthContext";
 import { useOfflineSalesStatsQuery } from "@/hooks/useOfflineOrderQueries";
+import {
+  ATTENDANCE_TODAY_KEY,
+  useTodayAttendanceQuery,
+} from "@/hooks/useAttendanceQueries";
+import { useMyTrackingQuery } from "@/hooks/useTrackingQueries";
 import { DutyStatusToggle } from "@/components/tracking/DutyStatusToggle";
 import { DailyAttendanceCard } from "@/components/attendance/DailyAttendanceCard";
+import { AttendanceModal } from "@/components/attendance/AttendanceModal";
 import type { UserRole } from "@/types/auth";
 import { useQueryClient } from "@tanstack/react-query";
 import { router } from "expo-router";
@@ -16,6 +22,7 @@ import {
   Users,
   Wallet,
 } from "lucide-react-native";
+import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -54,6 +61,43 @@ export default function HomeScreen() {
     isError,
   } = useOfflineSalesStatsQuery();
 
+  const isSalesPerson =
+    user?.role === "Offline_SalesPerson" || user?.role === "SalesPerson";
+
+  const { data: todayAttendance } = useTodayAttendanceQuery(isSalesPerson);
+  const { data: tracking } = useMyTrackingQuery(isSalesPerson);
+
+  const [attendanceModalVisible, setAttendanceModalVisible] = useState(false);
+  const [attendanceDoneLocally, setAttendanceDoneLocally] = useState(false);
+  const hasAutoPromptedRef = useRef(false);
+
+  const isAttendanceDone = Boolean(
+    todayAttendance?.attendance ||
+    attendanceDoneLocally ||
+    queryClient.getQueryData<{ attendance?: boolean }>(ATTENDANCE_TODAY_KEY)?.attendance
+  );
+
+  const isOnline = Boolean(tracking?.is_online);
+
+  // Auto-open Daily Attendance when user comes online (ONLY if attendance is NOT yet done today)
+  useEffect(() => {
+    if (!isSalesPerson) return;
+    if (isAttendanceDone) return;
+
+    if (
+      isOnline &&
+      !hasAutoPromptedRef.current &&
+      todayAttendance &&
+      !todayAttendance.attendance
+    ) {
+      hasAutoPromptedRef.current = true;
+      setAttendanceModalVisible(true);
+    } else if (!isOnline && !isAttendanceDone) {
+      // Only reset prompt if attendance has NOT been done yet
+      hasAutoPromptedRef.current = false;
+    }
+  }, [isSalesPerson, isOnline, todayAttendance, isAttendanceDone]);
+
   const roleLabel = user?.role ? ROLE_LABELS[user.role] : "";
 
   const greeting = (() => {
@@ -75,6 +119,7 @@ export default function HomeScreen() {
             onRefresh={() => {
               refetch();
               queryClient.invalidateQueries({ queryKey: ["attendance"] });
+              queryClient.invalidateQueries({ queryKey: ["myTracking"] });
             }}
             tintColor="#e8452c"
             colors={["#e8452c"]}
@@ -92,8 +137,23 @@ export default function HomeScreen() {
             </Text>
           </View>
 
-          {user?.role === "Offline_SalesPerson" || user?.role === "SalesPerson" ? (
-            <DutyStatusToggle userRole={user?.role} />
+          {isSalesPerson ? (
+            <DutyStatusToggle
+              userRole={user?.role}
+              onToggledOnline={() => {
+                if (
+                  isAttendanceDone ||
+                  todayAttendance?.attendance ||
+                  attendanceDoneLocally ||
+                  queryClient.getQueryData<{ attendance?: boolean }>(ATTENDANCE_TODAY_KEY)?.attendance
+                ) {
+                  return;
+                }
+
+                hasAutoPromptedRef.current = true;
+                setAttendanceModalVisible(true);
+              }}
+            />
           ) : (
             <View className="h-10 w-10 items-center justify-center rounded-xl bg-brand/10">
               <TrendingUp size={18} color="#e8452c" />
@@ -102,7 +162,10 @@ export default function HomeScreen() {
         </View>
 
         {/* Daily Attendance Card (Salesperson role) */}
-        <DailyAttendanceCard userRole={user?.role} />
+        <DailyAttendanceCard
+          userRole={user?.role}
+          onPress={() => setAttendanceModalVisible(true)}
+        />
 
         {/* Stats content */}
         {isLoading ? (
@@ -305,6 +368,20 @@ export default function HomeScreen() {
           </>
         )}
       </ScrollView>
+
+      {/* Attendance Modal (Salesperson role) */}
+      {isSalesPerson && (
+        <AttendanceModal
+          visible={attendanceModalVisible}
+          onClose={() => setAttendanceModalVisible(false)}
+          onSuccess={() => {
+            setAttendanceDoneLocally(true);
+            queryClient.setQueryData(ATTENDANCE_TODAY_KEY, { attendance: true });
+            queryClient.invalidateQueries({ queryKey: ATTENDANCE_TODAY_KEY });
+            queryClient.invalidateQueries({ queryKey: ["attendance"] });
+          }}
+        />
+      )}
     </SafeAreaView>
   );
 }
